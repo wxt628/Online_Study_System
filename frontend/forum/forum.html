@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>校园论坛 - 校园综合平台</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastify-js/1.12.0/toastify.min.css">
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <header class="forum-navbar">
+        <div class="container">
+            <a href="../home-page/index.html" class="back-home">
+                <i class="fas fa-arrow-left"></i> 返回首页
+            </a>
+            
+            <div class="forum-logo">
+                <i class="fas fa-comments"></i>
+                <span>校园论坛</span>
+            </div>
+            
+            <div class="forum-user-info" id="forum-user-info">
+                <div class="user-avatar">
+                    <img id="forum-user-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=guest" alt="用户头像">
+                </div>
+                <span id="forum-user-name">请登录</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="forum-container">
+        <!-- 侧边栏 -->
+        <aside class="forum-sidebar">
+            <div class="sidebar-section">
+                <h3><i class="fas fa-filter"></i> 分类筛选</h3>
+                <ul class="category-list" id="category-list">
+                    <li><a href="#" data-category="all" class="active"><i class="fas fa-list"></i> 全部帖子</a></li>
+                    <li><a href="#" data-category="学习交流"><i class="fas fa-graduation-cap"></i> 学习交流</a></li>
+                    <li><a href="#" data-category="校园生活"><i class="fas fa-home"></i> 校园生活</a></li>
+                    <li><a href="#" data-category="闲置交易"><i class="fas fa-exchange-alt"></i> 闲置交易</a></li>
+                    <li><a href="#" data-category="校园活动"><i class="fas fa-calendar-alt"></i> 校园活动</a></li>
+                    <li><a href="#" data-category="意见建议"><i class="fas fa-lightbulb"></i> 意见建议</a></li>
+                </ul>
+            </div>
+            
+            <div class="sidebar-section">
+                <h3><i class="fas fa-chart-line"></i> 热门标签</h3>
+                <div class="tag-cloud" id="tag-cloud">
+                    <span class="tag" data-tag="考试">考试</span>
+                    <span class="tag" data-tag="教材">教材</span>
+                    <span class="tag" data-tag="组队学习">组队学习</span>
+                    <span class="tag" data-tag="宿舍">宿舍</span>
+                    <span class="tag" data-tag="食堂">食堂</span>
+                    <span class="tag" data-tag="运动">运动</span>
+                    <span class="tag" data-tag="二手">二手</span>
+                    <span class="tag" data-tag="社团">社团</span>
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <h3><i class="fas fa-fire"></i> 热帖排行</h3>
+                <ol class="hot-posts-list" id="hot-posts-list">
+                    <!-- 热帖将通过JS动态加载 -->
+                </ol>
+            </div>
+            
+            <div class="sidebar-section">
+                <h3><i class="fas fa-info-circle"></i> 论坛规则</h3>
+                <ul class="rules-list">
+                    <li>尊重他人，文明交流</li>
+                    <li>禁止发布违法违规内容</li>
+                    <li>禁止人身攻击和谩骂</li>
+                    <li>交易信息请核实真实性</li>
+                    <li>发现违规内容请举报</li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- 主内容区域 -->
+        <div class="forum-main">
+            <!-- 发布帖子区域 -->
+            <div class="create-post-card" id="create-post-card">
+                <div class="post-avatar">
+                    <img id="create-post-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=guest" alt="用户头像">
+                </div>
+                <div class="post-input-container">
+                    <input type="text" id="post-title-input" placeholder="请输入帖子标题" class="post-title-input">
+                    <textarea id="post-content-input" placeholder="分享你的想法..." class="post-content-input"></textarea>
+                    <div class="post-actions">
+                        <div class="post-category-select">
+                            <select id="post-category-select">
+                                <option value="">选择分类</option>
+                                <option value="学习交流">学习交流</option>
+                                <option value="校园生活">校园生活</option>
+                                <option value="闲置交易">闲置交易</option>
+                                <option value="校园活动">校园活动</option>
+                                <option value="意见建议">意见建议</option>
+                            </select>
+                        </div>
+                        <div class="post-buttons">
+                            <button class="btn btn-secondary" id="add-tag-btn">
+                                <i class="fas fa-tag"></i> 添加标签
+                            </button>
+                            <button class="btn btn-primary" id="submit-post-btn">
+                                <i class="fas fa-paper-plane"></i> 发布帖子
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 帖子筛选和排序 -->
+            <div class="posts-filter">
+                <div class="filter-left">
+                    <div class="filter-item">
+                        <label for="sort-by">排序方式：</label>
+                        <select id="sort-by">
+                            <option value="created_at">最新发布</option>
+                            <option value="like_count">最多点赞</option>
+                            <option value="view_count">最多浏览</option>
+                            <option value="comment_count">最多评论</option>
+                        </select>
+                    </div>
+                    <div class="filter-item">
+                        <label for="order">顺序：</label>
+                        <select id="order">
+                            <option value="desc">降序</option>
+                            <option value="asc">升序</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="filter-right">
+                    <div class="search-box">
+                        <input type="text" id="search-input" placeholder="搜索帖子...">
+                        <button id="search-btn"><i class="fas fa-search"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 帖子列表 -->
+            <div class="posts-container" id="posts-container">
+                <!-- 帖子将通过JS动态加载 -->
+                <div class="loading-posts" id="loading-posts">
+                    <div class="loading-spinner"></div>
+                    <p>正在加载帖子...</p>
+                </div>
+            </div>
+
+            <!-- 分页控件 -->
+            <div class="pagination" id="pagination">
+                <!-- 分页将通过JS动态生成 -->
+            </div>
+        </div>
+    </main>
+
+    <!-- 帖子详情模态框 -->
+    <div class="modal" id="post-detail-modal">
+        <div class="modal-content post-detail-modal">
+            <div class="modal-header">
+                <h2 id="post-detail-title">帖子标题</h2>
+                <button class="modal-close" id="post-detail-close">&times;</button>
+            </div>
+            <div class="modal-body" id="post-detail-body">
+                <!-- 帖子详情内容将通过JS动态加载 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 登录提示模态框 -->
+    <div class="modal" id="login-prompt-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>登录提示</h2>
+                <button class="modal-close" id="login-prompt-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="login-prompt-content">
+                    <i class="fas fa-user-lock"></i>
+                    <p>请先登录才能使用论坛功能</p>
+                    <div class="login-prompt-buttons">
+                        <button class="btn btn-primary" id="go-login-btn">去登录</button>
+                        <button class="btn btn-secondary" id="cancel-login-btn">取消</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 标签选择模态框 -->
+    <div class="modal" id="tag-select-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>选择标签</h2>
+                <button class="modal-close" id="tag-select-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="tag-select-content">
+                    <p>选择最多3个标签：</p>
+                    <div class="available-tags" id="available-tags">
+                        <!-- 标签将通过JS动态加载 -->
+                    </div>
+                    <div class="selected-tags" id="selected-tags">
+                        <p>已选择：<span id="selected-tags-count">0</span>个标签</p>
+                        <div class="selected-tags-list" id="selected-tags-list">
+                            <!-- 已选标签将显示在这里 -->
+                        </div>
+                    </div>
+                    <div class="tag-modal-buttons">
+                        <button class="btn btn-primary" id="confirm-tags-btn">确定</button>
+                        <button class="btn btn-secondary" id="cancel-tags-btn">取消</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="forum-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>校园论坛</h3>
+                    <p>校园内的交流社区，支持发帖、回帖与互动，促进同学间的交流与合作。</p>
+                </div>
+                <div class="footer-section">
+                    <h3>在线人数</h3>
+                    <p class="online-count"><i class="fas fa-users"></i> <span id="online-count">156</span> 人正在浏览</p>
+                    <p class="post-count"><i class="fas fa-file-alt"></i> 今日发帖：<span id="today-post-count">24</span></p>
+                </div>
+                <div class="footer-section">
+                    <h3>反馈建议</h3>
+                    <p>如有问题或建议，请联系论坛管理员</p>
+                    <p><i class="fas fa-envelope"></i> forum@campus.edu.cn</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 校园综合平台论坛. 版权所有.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastify-js/1.12.0/toastify.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

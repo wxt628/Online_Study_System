@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>校园综合平台 - 首页</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <header class="navbar">
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-graduation-cap"></i>
+                <span>校园综合平台</span>
+            </div>
+            
+            <nav class="nav-links">
+                <a href="#" class="active"><i class="fas fa-home"></i> 首页</a>
+                <a href="../miniapps/miniapps.html"><i class="fas fa-th-large"></i> 小程序</a>
+                <a href="../homework/homework.html"><i class="fas fa-tasks"></i> 作业</a>
+                <a href="../forum/forum.html"><i class="fas fa-comments"></i> 论坛</a>
+            </nav>
+            
+            <div class="user-profile">
+                <div class="user-info" id="user-info">
+                    <div class="user-avatar">
+                        <img id="user-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=张三" alt="用户头像">
+                    </div>
+                    <div class="user-name" id="user-name">请登录</div>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="user-dropdown" id="user-dropdown">
+                    <a href="#" id="login-btn"><i class="fas fa-sign-in-alt"></i> 登录</a>
+                    <a href="#" id="profile-btn" style="display:none;"><i class="fas fa-user"></i> 个人信息</a>
+                    <a href="#" id="logout-btn" style="display:none;"><i class="fas fa-sign-out-alt"></i> 退出登录</a>
+                </div>
+            </div>
+            
+            <button class="mobile-menu-btn" id="mobile-menu-btn">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- 登录模态框 -->
+    <div class="modal" id="login-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>用户登录</h2>
+                <button class="modal-close" id="login-modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="student-id"><i class="fas fa-id-card"></i> 学号</label>
+                        <input type="text" id="student-id" placeholder="请输入学号" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password"><i class="fas fa-lock"></i> 密码</label>
+                        <input type="password" id="password" placeholder="请输入密码" required>
+                    </div>
+                    <div class="form-group form-check">
+                        <input type="checkbox" id="remember-me">
+                        <label for="remember-me">记住我</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">登录</button>
+                </form>
+                <div class="login-message" id="login-message"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主要内容区 -->
+    <main class="container">
+        <!-- 欢迎横幅 -->
+        <section class="welcome-banner">
+            <div class="welcome-content">
+                <h1 id="welcome-text">欢迎使用校园综合平台</h1>
+                <p>一站式校园服务，集成学习、生活、交流多种功能</p>
+            </div>
+            <div class="welcome-stats">
+                <div class="stat-item">
+                    <i class="fas fa-th-large"></i>
+                    <div>
+                        <span class="stat-number" id="mini-program-count">0</span>
+                        <span class="stat-label">个小程序</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-tasks"></i>
+                    <div>
+                        <span class="stat-number" id="assignment-count">0</span>
+                        <span class="stat-label">个待办作业</span>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-comments"></i>
+                    <div>
+                        <span class="stat-number" id="post-count">0</span>
+                        <span class="stat-label">条新帖子</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 功能模块区 -->
+        <section class="modules-section">
+            <!-- 小程序平台模块 -->
+            <div class="module-card">
+                <div class="module-header">
+                    <div class="module-icon" style="background-color: #4CAF50;">
+                        <i class="fas fa-th-large"></i>
+                    </div>
+                    <h2>校园小程序平台</h2>
+                    <a href="../miniapps/miniapps.html" class="module-more">查看全部 <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="module-description">
+                    <p>集成多个校园服务小程序，统一入口，便捷访问</p>
+                </div>
+                <div class="mini-programs-grid" id="mini-programs-grid">
+                    <!-- 小程序卡片将通过JS动态加载 -->
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                    <div class="skeleton-card"></div>
+                </div>
+            </div>
+
+            <!-- 作业平台模块 -->
+            <div class="module-card">
+                <div class="module-header">
+                    <div class="module-icon" style="background-color: #2196F3;">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <h2>校园作业平台</h2>
+                    <a href="../homework/homework.html" class="module-more">查看全部 <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="module-description">
+                    <p>作业查看、管理和提交的线上协作环境</p>
+                </div>
+                <div class="assignments-list" id="assignments-list">
+                    <!-- 作业列表将通过JS动态加载 -->
+                    <div class="skeleton-item"></div>
+                    <div class="skeleton-item"></div>
+                    <div class="skeleton-item"></div>
+                </div>
+            </div>
+
+            <!-- 论坛平台模块 -->
+            <div class="module-card">
+                <div class="module-header">
+                    <div class="module-icon" style="background-color: #FF9800;">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <h2>校园论坛平台</h2>
+                    <a href="../forum/forum.html" class="module-more">查看全部 <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="module-description">
+                    <p>校园交流社区，支持发帖、回帖与互动</p>
+                </div>
+                <div class="posts-list" id="posts-list">
+                    <!-- 帖子列表将通过JS动态加载 -->
+                    <div class="skeleton-item"></div>
+                    <div class="skeleton-item"></div>
+                    <div class="skeleton-item"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 快捷操作区 -->
+        <section class="quick-actions">
+            <h2><i class="fas fa-bolt"></i> 快捷操作</h2>
+            <div class="actions-grid">
+                <a href="../homework/homework.html" class="action-card" id="quick-submit">
+                    <i class="fas fa-upload"></i>
+                    <span>提交作业</span>
+                </a>
+                <a href="../forum/forum.html" class="action-card" id="quick-post">
+                    <i class="fas fa-edit"></i>
+                    <span>发表帖子</span>
+                </a>
+                <a href="#" class="action-card" id="quick-card">
+                    <i class="fas fa-credit-card"></i>
+                    <span>校园卡充值</span>
+                </a>
+                <a href="#" class="action-card" id="quick-library">
+                    <i class="fas fa-book"></i>
+                    <span>图书馆查询</span>
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>校园综合平台</h3>
+                    <p>一站式校园服务平台，集成学习、生活、交流多种功能，为大学生提供便捷的校园信息化服务体验。</p>
+                </div>
+                <div class="footer-section">
+                    <h3>核心功能</h3>
+                    <ul>
+                        <li><a href="../miniapps/miniapps.html">校园小程序平台</a></li>
+                        <li><a href="../homework/homework.html">校园作业平台</a></li>
+                        <li><a href="../forum/forum.html">校园论坛平台</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>联系我们</h3>
+                    <p><i class="fas fa-envelope"></i> support@campus.edu.cn</p>
+                    <p><i class="fas fa-phone"></i> 400-123-4567</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 校园综合平台. 版权所有.</p>
+                <p>当前版本: v1.0 | 最后更新: 2024-03-11</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

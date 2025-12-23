@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>作业平台 - 校园综合平台</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastify-js/1.12.0/toastify.min.css">
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <header class="assignments-navbar">
+        <div class="container">
+            <a href="../home-page/index.html" class="back-home">
+                <i class="fas fa-arrow-left"></i> 返回首页
+            </a>
+            
+            <div class="assignments-logo">
+                <i class="fas fa-tasks"></i>
+                <span>校园作业平台</span>
+            </div>
+            
+            <div class="assignments-user-info" id="assignments-user-info">
+                <div class="user-avatar">
+                    <img id="assignments-user-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=guest" alt="用户头像">
+                </div>
+                <span id="assignments-user-name">请登录</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="assignments-main">
+        <div class="container">
+            <!-- 概览卡片 -->
+            <section class="overview-cards">
+                <div class="overview-card">
+                    <div class="overview-icon" style="background-color: #FF6B6B;">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="overview-content">
+                        <div class="overview-number" id="pending-count">0</div>
+                        <div class="overview-label">待提交作业</div>
+                    </div>
+                </div>
+                
+                <div class="overview-card">
+                    <div class="overview-icon" style="background-color: #4ECDC4;">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="overview-content">
+                        <div class="overview-number" id="submitted-count">0</div>
+                        <div class="overview-label">已提交作业</div>
+                    </div>
+                </div>
+                
+                <div class="overview-card">
+                    <div class="overview-icon" style="background-color: #45B7D1;">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="overview-content">
+                        <div class="overview-number" id="average-score">0</div>
+                        <div class="overview-label">平均成绩</div>
+                    </div>
+                </div>
+                
+                <div class="overview-card">
+                    <div class="overview-icon" style="background-color: #96CEB4;">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div class="overview-content">
+                        <div class="overview-number" id="upcoming-count">0</div>
+                        <div class="overview-label">即将截止</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 课程筛选 -->
+            <section class="course-filter">
+                <div class="filter-header">
+                    <h2><i class="fas fa-book"></i> 我的课程</h2>
+                    <div class="semester-select">
+                        <select id="semester-select">
+                            <option value="all">全部学期</option>
+                            <option value="2024-2025-1">2024-2025学年第一学期</option>
+                            <option value="2023-2024-2">2023-2024学年第二学期</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="course-tabs" id="course-tabs">
+                    <!-- 课程选项卡将通过JS动态加载 -->
+                    <div class="course-tab skeleton-tab"></div>
+                    <div class="course-tab skeleton-tab"></div>
+                    <div class="course-tab skeleton-tab"></div>
+                </div>
+            </section>
+
+            <!-- 作业列表 -->
+            <section class="assignments-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-clipboard-list"></i> 作业列表</h2>
+                    <div class="assignment-filters">
+                        <select id="assignment-status-filter">
+                            <option value="all">全部状态</option>
+                            <option value="pending">待提交</option>
+                            <option value="submitted">已提交</option>
+                            <option value="expired">已截止</option>
+                        </select>
+                        <button class="btn btn-secondary" id="refresh-assignments-btn">
+                            <i class="fas fa-redo-alt"></i> 刷新
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="assignments-container" id="assignments-container">
+                    <!-- 作业列表将通过JS动态加载 -->
+                    <div class="loading-assignments" id="loading-assignments">
+                        <div class="loading-spinner"></div>
+                        <p>正在加载作业...</p>
+                    </div>
+                </div>
+                
+                <div class="no-assignments" id="no-assignments" style="display: none;">
+                    <i class="fas fa-clipboard-check"></i>
+                    <h3>暂无作业</h3>
+                    <p>当前没有需要提交的作业，可以放松一下！</p>
+                </div>
+            </section>
+
+            <!-- 最近提交记录 -->
+            <section class="recent-submissions-section" id="recent-submissions-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-history"></i> 最近提交记录</h2>
+                    <a href="#" class="view-all-link" id="view-all-submissions">查看全部 <i class="fas fa-arrow-right"></i></a>
+                </div>
+                
+                <div class="submissions-table-container">
+                    <table class="submissions-table">
+                        <thead>
+                            <tr>
+                                <th>作业名称</th>
+                                <th>课程</th>
+                                <th>提交时间</th>
+                                <th>成绩</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-submissions-body">
+                            <!-- 最近提交记录将通过JS动态加载 -->
+                            <tr class="skeleton-row">
+                                <td><div class="skeleton-text"></div></td>
+                                <td><div class="skeleton-text"></div></td>
+                                <td><div class="skeleton-text"></div></td>
+                                <td><div class="skeleton-text"></div></td>
+                                <td><div class="skeleton-text"></div></td>
+                                <td><div class="skeleton-text"></div></td>
+                            </tr>
+                            <tr class="skeleton-row">
+                                <td><div class="skeleton-text"></div></td>
+                                <td><div class="skeleton-text"></div></td>
+                                <td><div class="skeleton-text"></div></td>
+                                <td><div class="skeleton-text"></div></td>
+                                <td><div class="skeleton-text"></div></td>
+                                <td><div class="skeleton-text"></div></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="empty-submissions" id="empty-submissions" style="display: none;">
+                        <i class="fas fa-inbox"></i>
+                        <p>暂无提交记录</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- 作业详情模态框 -->
+    <div class="modal" id="assignment-detail-modal">
+        <div class="modal-content assignment-detail-modal">
+            <div class="modal-header">
+                <h2 id="assignment-detail-title">作业标题</h2>
+                <button class="modal-close" id="assignment-detail-close">&times;</button>
+            </div>
+            <div class="modal-body" id="assignment-detail-body">
+                <!-- 作业详情内容将通过JS动态加载 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 提交作业模态框 -->
+    <div class="modal" id="submit-assignment-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="submit-assignment-title">提交作业</h2>
+                <button class="modal-close" id="submit-assignment-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="submit-assignment-content">
+                    <div class="assignment-info" id="submit-assignment-info">
+                        <!-- 作业信息将通过JS动态加载 -->
+                    </div>
+                    
+                    <form id="submit-assignment-form">
+                        <div class="form-group">
+                            <label for="assignment-file">
+                                <i class="fas fa-file-upload"></i> 选择文件
+                            </label>
+                            <div class="file-upload-area" id="file-upload-area">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <p>点击或拖拽文件到此处上传</p>
+                                <p class="file-hint">支持格式：PDF, Word, Excel, PPT, ZIP, 图片等</p>
+                                <input type="file" id="assignment-file" accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.rar,.jpg,.jpeg,.png,.txt">
+                            </div>
+                            <div class="file-info" id="file-info" style="display: none;">
+                                <div class="file-preview">
+                                    <i class="fas fa-file"></i>
+                                    <div class="file-details">
+                                        <div class="file-name" id="selected-file-name">文件名</div>
+                                        <div class="file-size" id="selected-file-size">文件大小</div>
+                                    </div>
+                                    <button type="button" class="btn-remove-file" id="remove-file-btn">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="assignment-comment">
+                                <i class="fas fa-comment"></i> 提交备注（可选）
+                            </label>
+                            <textarea id="assignment-comment" placeholder="可以在这里添加备注说明..."></textarea>
+                        </div>
+                        
+                        <div class="form-group form-check">
+                            <input type="checkbox" id="confirm-submission">
+                            <label for="confirm-submission">我确认提交的作业文件内容正确无误</label>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" id="submit-assignment-btn" disabled>
+                                <i class="fas fa-paper-plane"></i> 提交作业
+                            </button>
+                            <button type="button" class="btn btn-secondary" id="cancel-submission-btn">
+                                取消
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div class="submission-message" id="submission-message"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提交详情模态框 -->
+    <div class="modal" id="submission-detail-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>提交详情</h2>
+                <button class="modal-close" id="submission-detail-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="submission-detail-content" id="submission-detail-content">
+                    <!-- 提交详情将通过JS动态加载 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 登录提示模态框 -->
+    <div class="modal" id="assignments-login-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>登录提示</h2>
+                <button class="modal-close" id="assignments-login-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="login-prompt-content">
+                    <i class="fas fa-user-lock"></i>
+                    <p>请先登录才能使用作业平台功能</p>
+                    <div class="login-prompt-buttons">
+                        <button class="btn btn-primary" id="assignments-login-btn">去登录</button>
+                        <button class="btn btn-secondary" id="assignments-cancel-btn">取消</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="assignments-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>校园作业平台</h3>
+                    <p>为学生提供作业查看、管理和提交的线上协作环境，支持文件下载与上传，方便学习交流。</p>
+                </div>
+                <div class="footer-section">
+                    <h3>使用提醒</h3>
+                    <p><i class="fas fa-exclamation-triangle"></i> 请务必在截止时间前提交作业</p>
+                    <p><i class="fas fa-file-archive"></i> 建议将多个文件压缩为ZIP格式上传</p>
+                    <p><i class="fas fa-save"></i> 提交后请保存提交记录和文件副本</p>
+                </div>
+                <div class="footer-section">
+                    <h3>技术支持</h3>
+                    <p>如有技术问题或作业提交异常，请联系</p>
+                    <p><i class="fas fa-envelope"></i> assignment@campus.edu.cn</p>
+                    <p><i class="fas fa-phone"></i> 400-123-4567（工作日 9:00-17:00）</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 校园综合平台作业中心. 版权所有.</p>
+                <p>当前版本: v1.2.0 | 最后更新: <span id="assignments-update-time">2024-03-11</span></p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastify-js/1.12.0/toastify.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

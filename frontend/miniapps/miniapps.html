@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小程序平台 - 校园综合平台</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastify-js/1.12.0/toastify.min.css">
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <header class="mini-navbar">
+        <div class="container">
+            <a href="../home-page/index.html" class="back-home">
+                <i class="fas fa-arrow-left"></i> 返回首页
+            </a>
+            
+            <div class="mini-logo">
+                <i class="fas fa-th-large"></i>
+                <span>校园小程序平台</span>
+            </div>
+            
+            <div class="mini-user-info" id="mini-user-info">
+                <div class="user-avatar">
+                    <img id="mini-user-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=guest" alt="用户头像">
+                </div>
+                <span id="mini-user-name">请登录</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 搜索和筛选区域 -->
+    <section class="mini-search-section">
+        <div class="container">
+            <div class="search-container">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="mini-search-input" placeholder="搜索小程序...">
+                    <button id="clear-search-btn" class="clear-search-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="search-tips">
+                    <span>热门搜索：</span>
+                    <a href="#" class="search-tag" data-search="一卡通">一卡通</a>
+                    <a href="#" class="search-tag" data-search="图书馆">图书馆</a>
+                    <a href="#" class="search-tag" data-search="课表">课表</a>
+                    <a href="#" class="search-tag" data-search="成绩">成绩</a>
+                </div>
+            </div>
+            
+            <div class="filter-container">
+                <div class="category-filter">
+                    <button class="category-btn active" data-category="all">
+                        <i class="fas fa-list"></i> 全部
+                    </button>
+                    <button class="category-btn" data-category="教务">
+                        <i class="fas fa-graduation-cap"></i> 教务
+                    </button>
+                    <button class="category-btn" data-category="生活">
+                        <i class="fas fa-home"></i> 生活
+                    </button>
+                    <button class="category-btn" data-category="工具">
+                        <i class="fas fa-tools"></i> 工具
+                    </button>
+                    <button class="category-btn" data-category="健康">
+                        <i class="fas fa-heartbeat"></i> 健康
+                    </button>
+                    <button class="category-btn" data-category="娱乐">
+                        <i class="fas fa-gamepad"></i> 娱乐
+                    </button>
+                </div>
+                
+                <div class="sort-filter">
+                    <select id="sort-select">
+                        <option value="display_order">默认排序</option>
+                        <option value="name">名称排序</option>
+                        <option value="recent">最近使用</option>
+                        <option value="popular">最受欢迎</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 主内容区 -->
+    <main class="mini-main">
+        <div class="container">
+            <!-- 我的小程序 -->
+            <section class="my-mini-section" id="my-mini-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-star"></i> 我的小程序</h2>
+                    <button class="btn-edit" id="edit-my-mini-btn">
+                        <i class="fas fa-edit"></i> 编辑
+                    </button>
+                </div>
+                <div class="my-mini-grid" id="my-mini-grid">
+                    <!-- 我的小程序将通过JS动态加载 -->
+                    <div class="empty-my-mini" id="empty-my-mini">
+                        <i class="fas fa-plus-circle"></i>
+                        <p>您还没有添加常用小程序</p>
+                        <p>点击下方小程序右上角的 <i class="fas fa-star"></i> 可以添加到我的小程序</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 小程序列表 -->
+            <section class="mini-list-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-th-large"></i> 全部小程序</h2>
+                    <div class="mini-count">
+                        共 <span id="mini-total-count">0</span> 个小程序
+                    </div>
+                </div>
+                
+                <div class="mini-grid" id="mini-grid">
+                    <!-- 小程序将通过JS动态加载 -->
+                </div>
+                
+                <div class="loading-mini" id="loading-mini">
+                    <div class="loading-spinner"></div>
+                    <p>正在加载小程序...</p>
+                </div>
+                
+                <div class="no-results" id="no-results" style="display: none;">
+                    <i class="fas fa-search"></i>
+                    <h3>未找到相关小程序</h3>
+                    <p>请尝试其他搜索关键词或分类</p>
+                </div>
+            </section>
+
+            <!-- 推荐小程序 -->
+            <section class="recommend-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-fire"></i> 推荐使用</h2>
+                    <div class="recommend-refresh">
+                        <i class="fas fa-redo-alt"></i>
+                        <span>换一批</span>
+                    </div>
+                </div>
+                <div class="recommend-slider" id="recommend-slider">
+                    <!-- 推荐小程序将通过JS动态加载 -->
+                </div>
+            </section>
+
+            <!-- 最近使用 -->
+            <section class="recent-section" id="recent-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-history"></i> 最近使用</h2>
+                    <button class="btn-clear" id="clear-recent-btn">
+                        <i class="fas fa-trash-alt"></i> 清空记录
+                    </button>
+                </div>
+                <div class="recent-grid" id="recent-grid">
+                    <!-- 最近使用小程序将通过JS动态加载 -->
+                    <div class="empty-recent" id="empty-recent">
+                        <i class="fas fa-clock"></i>
+                        <p>暂无最近使用记录</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- 小程序详情模态框 -->
+    <div class="modal" id="mini-detail-modal">
+        <div class="modal-content mini-detail-modal">
+            <div class="modal-header">
+                <h2 id="mini-detail-title">小程序标题</h2>
+                <button class="modal-close" id="mini-detail-close">&times;</button>
+            </div>
+            <div class="modal-body" id="mini-detail-body">
+                <!-- 小程序详情内容将通过JS动态加载 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑我的小程序模态框 -->
+    <div class="modal" id="edit-mini-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>编辑我的小程序</h2>
+                <button class="modal-close" id="edit-mini-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="edit-mini-content">
+                    <p>长按拖动调整顺序，点击 <i class="fas fa-times"></i> 移除</p>
+                    <div class="edit-mini-list" id="edit-mini-list">
+                        <!-- 编辑列表将通过JS动态加载 -->
+                    </div>
+                    <div class="edit-mini-buttons">
+                        <button class="btn btn-primary" id="save-edit-btn">保存</button>
+                        <button class="btn btn-secondary" id="cancel-edit-btn">取消</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <nav class="mini-bottom-nav">
+        <a href="#" class="nav-item active">
+            <i class="fas fa-th-large"></i>
+            <span>首页</span>
+        </a>
+        <a href="#" class="nav-item" id="my-mini-nav">
+            <i class="fas fa-star"></i>
+            <span>我的</span>
+        </a>
+        <a href="#" class="nav-item" id="recent-mini-nav">
+            <i class="fas fa-history"></i>
+            <span>最近</span>
+        </a>
+        <a href="#" class="nav-item">
+            <i class="fas fa-user"></i>
+            <span>我</span>
+        </a>
+    </nav>
+
+    <!-- 页脚 -->
+    <footer class="mini-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>校园小程序平台</h3>
+                    <p>集成多个校园服务小程序，统一入口，便捷访问各类校园服务。</p>
+                </div>
+                <div class="footer-section">
+                    <h3>使用数据</h3>
+                    <p class="mini-stats"><i class="fas fa-chart-line"></i> 今日使用：<span id="today-use-count">156</span> 次</p>
+                    <p class="mini-stats"><i class="fas fa-users"></i> 活跃用户：<span id="active-user-count">1243</span> 人</p>
+                </div>
+                <div class="footer-section">
+                    <h3>开发者入驻</h3>
+                    <p>如果你是开发者，想为校园小程序平台开发小程序</p>
+                    <p><i class="fas fa-envelope"></i> dev@campus.edu.cn</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 校园综合平台小程序中心. 版权所有.</p>
+                <p>当前版本: v2.1.0 | 数据更新: <span id="data-update-time">2024-03-11</span></p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastify-js/1.12.0/toastify.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
