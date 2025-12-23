@@ -1,23 +1,41 @@
+-- drop database campus_platform;
 -- 创建数据库（如果不存在）
 CREATE DATABASE IF NOT EXISTS campus_platform DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE campus_platform;
 
--- 1. 用户表
+-- 1. 用户表（修改版）
 CREATE TABLE users (
-    user_id INT PRIMARY KEY AUTO_INCREMENT COMMENT '用户ID',
-    student_id VARCHAR(20) UNIQUE NOT NULL COMMENT '学号',
-    password VARCHAR(255) NOT NULL COMMENT '密码（加密存储）',
-    name VARCHAR(50) NOT NULL COMMENT '姓名',
-    email VARCHAR(100) UNIQUE COMMENT '邮箱',
-    phone VARCHAR(20) COMMENT '手机号',
-    avatar_url VARCHAR(255) COMMENT '头像链接',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
+    user_id               INT             PRIMARY KEY AUTO_INCREMENT                                COMMENT '用户ID',
+    student_id            VARCHAR(20)     UNIQUE NOT NULL                                           COMMENT '学号',
+    password_hash         VARCHAR(255)    NOT NULL                                                  COMMENT '密码哈希（加密存储）',
+    salt                  VARCHAR(32)     NOT NULL                                                  COMMENT '密码盐值',
+    role                  VARCHAR(20)     DEFAULT 'student'                                         COMMENT '角色',
+    force_password_change BOOLEAN         DEFAULT TRUE                                              COMMENT '是否强制修改密码',
+    failed_attempts       INT             DEFAULT 0                                                 COMMENT '连续登录失败次数',
+    locked_until          DATETIME        DEFAULT NULL                                              COMMENT '账户锁定截止时间',
+    name                  VARCHAR(50)     NOT NULL                                                  COMMENT '姓名',
+    email                 VARCHAR(100)    UNIQUE                                                    COMMENT '邮箱',
+    phone                 VARCHAR(20)                                                               COMMENT '手机号',
+    avatar_url            VARCHAR(255)                                                              COMMENT '头像链接',
+    created_at            DATETIME        DEFAULT CURRENT_TIMESTAMP                                 COMMENT '创建时间',
+    updated_at            DATETIME        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP     COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4                                                             COMMENT='用户表';
 
 -- 索引
 CREATE INDEX idx_student_id ON users(student_id);
 CREATE INDEX idx_email ON users(email);
+
+-- 测试
+INSERT INTO users (student_id, salt, password_hash, name, email, created_at, updated_at)
+VALUES (
+    'lyk', 
+    'szuacm2024', 
+    '82ae6c4a65aaa3319b9e883c3f3c01135c6e13d2b620eaa981d8c978d3ecc9de', 
+    'LYK', 
+    'lyk@example.com', 
+    NOW(), 
+    NOW()
+);
 
 -- 2. 小程序表
 CREATE TABLE mini_programs (
