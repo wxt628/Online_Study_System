@@ -13,8 +13,6 @@ class User(Base):
 	student_id            = Column(String(20), unique=True, nullable=False)
 	password_hash         = Column(String(255), nullable=False)          # 存储加盐哈希
 	salt                  = Column(String(32), nullable=False)           # 密码盐
-	role                  = Column(String(20), default='student')        # 用户角色
-	force_password_change = Column(Boolean, default=True)
 	failed_attempts       = Column(Integer, default=0)                   # 连续登录失败次数
 	locked_until          = Column(DateTime, default=None)               # 账户锁定截止时间
 
