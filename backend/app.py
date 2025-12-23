@@ -1,18 +1,18 @@
-from typing import List, Optional, Dict, Any
 from fastapi.middleware.cors import CORSMiddleware
 
-from fastapi import FastAPI, Query, HTTPException, UploadFile, File, Form, status
+from fastapi import Depends, Header, FastAPI, Query, HTTPException, UploadFile, File, Form, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-# from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 from pydantic import BaseModel
 from sqlalchemy import create_engine, Column, Integer, String, Float, Text, Enum, ForeignKey, DECIMAL, and_, or_, asc, desc
 from sqlalchemy.orm import sessionmaker, relationship, joinedload, declarative_base
+from typing import Optional
 import math
 
+from src.security import create_access_token, get_current_user
 
-import hashlib, secrets, db_struct
+import hashlib, src.database as database
 
 
 app = FastAPI(title="Campus Platform API", version="1.0.0")
@@ -24,31 +24,15 @@ app.add_middleware(
 	allow_headers=["*"]
 )
 
-@app.get("/api/v1/test")
-def test():
-	return {
-		"code": 200,
-		"message": "这个 API 还活着",
-		"data": {
-			"thephix",
-			114514,
-			"傻逼"
-		}
-	}
-
+""" 登录模块 """
 class LoginRequest(BaseModel):
 	student_id: str
 	password: str
 
-class LoginUserInfo(BaseModel):
-	id: int
-	student_id: str
-	role: str
-	force_password_change: bool = True
-
 class LoginResponse(BaseModel):
 	token: str
-	user: LoginUserInfo
+	user_id: str
+	student_id: str
 
 LOGIN_LOCK_DURATION = timedelta(minutes=5)
 MAX_FAILED_ATTEMPTS = 5
@@ -58,9 +42,9 @@ def hash_password(salt: str, password: str) -> str:
 
 @app.post("/api/v1/auth/login", response_model=LoginResponse)
 def login(payload: LoginRequest):
-	db = db_struct.SessionLocal()
+	db = database.SessionLocal()
 	try:
-		user = db.query(db_struct.User).filter(db_struct.User.student_id == payload.student_id).first()
+		user = db.query(database.User).filter(database.User.student_id == payload.student_id).first()
 
 		if not user:
 			raise HTTPException(status_code=401, detail={
@@ -77,6 +61,7 @@ def login(payload: LoginRequest):
 		salt = user.salt
 		if hash_password(salt, payload.password) != expected_hash:
 			user.failed_attempts = int(user.failed_attempts) + 1
+			db.commit()
 			if user.failed_attempts >= MAX_FAILED_ATTEMPTS:
 				user.locked_until = now + LOGIN_LOCK_DURATION
 				db.commit()
@@ -91,21 +76,87 @@ def login(payload: LoginRequest):
 		user.locked_until = None
 		db.commit()
 
-		# 生成演示用令牌（生产环境请使用 JWT 并设置过期时间等）
-		token = secrets.token_urlsafe(32)
+		token = create_access_token(
+			data={ "sub": str(user.student_id) }
+		)
 		return LoginResponse(
 			token=token,
-			user=LoginUserInfo(
-				id=user.user_id,
-				student_id=user.student_id,
-				role=user.role,
-				force_password_change=bool(user.force_password_change)
-			)
+			user_id=user.user_id,
+			student_id=user.student_id
 		)
 	finally:
 		db.close()
 
-student_id = "lyk"
-password = "123456"
-salt = "szuacm2024"
-print(hash_password(salt, password))
+""" 查看个人信息 """
+class UserInfomation(BaseModel):
+	user_id: str
+	student_id: str
+	name: str
+	email: str
+	phone: str
+	avatar_url: str
+	created_at: str
+	updated_at: str
+
+@app.get("/api/v1/me", response_model=UserInfomation)
+def me(current_user: database.User = Depends(get_current_user)):
+	return UserInfomation(
+		user_id=current_user.user_id,
+		student_id=current_user.student_id,
+		name=current_user.name,
+		email=current_user.email,
+		phone=current_user.phone,
+		avatar_url=current_user.avatar_url,
+		created_at=current_user.created_at,
+		updated_at=current_user.updated_at,
+	)
+
+"""修改个人信息"""
+class UpdateRequest(BaseModel):
+	name: Optional[str] = None
+	email: Optional[str] = None
+	phone: Optional[str] = None
+	avatar_url: Optional[str] = None
+	old_password: Optional[str] = None
+	new_password: Optional[str] = None
+
+@app.put("/api/v1/users/me")
+def update_user_info(
+	payload: UpdateRequest,
+	current_user: database.User = Depends(get_current_user)
+):
+	db = database.SessionLocal()
+	try:
+		user = db.query(database.User).filter(database.User.user_id == current_user.user_id).first()
+		if payload.name:
+			user.name = payload.name
+		if payload.email:
+			user.email = payload.email
+		if payload.phone:
+			user.phone = payload.phone
+		if payload.avatar_url:
+			user.avatar_url = payload.avatar_url
+
+		if payload.old_password and payload.new_password:
+			if hash_password(user.salt, payload.old_password) != user.password_hash:
+				raise HTTPException(status_code=400, detail="旧密码错误")
+			user.password_hash = hash_password(user.salt, payload.new_password)
+
+		user.updated_at = datetime.utcnow()
+		db.commit()
+		return {
+			"code": 200,
+			"message": "更新成功",
+			"data": {
+				"user_id": current_user.user_id,
+				"student_id": current_user.student_id,
+				"name": current_user.name,
+				"email": current_user.email,
+				"phone": current_user.phone,
+				"avatar_url": current_user.avatar_url,
+				"created_at": current_user.created_at,
+				"updated_at": current_user.updated_at,
+			}
+		}
+	finally:
+		db.close()

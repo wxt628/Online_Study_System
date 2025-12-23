@@ -25,7 +25,9 @@
 | ---- | ---- | ---- | ---- |
 | `user_id` | `INT` | 主键、自增 | 唯一标识用户，作为外键关联其他表 |
 | `student_id` | `VARCHAR(20)` | 唯一、非空 | 用户学号，作为登录标识之一 |
-| `password` | `VARCHAR(255)` | 非空 | 加密后的用户密码（建议使用MD5、BCrypt等加密方式） |
+| `password_hash` | `VARCHAR(255)` | 非空 | 加密后的用户密码（建议使用MD5、BCrypt等加密方式） |
+| `failed_attempts` |   |   |  |
+| `locked_until` |   |   |  |
 | `name` | `VARCHAR(50)` | 非空 | 用户真实姓名 |
 | `email` | `VARCHAR(100)` | 唯一 | 用户邮箱，用于找回密码、接收通知 |
 | `phone` | `VARCHAR(20)` | 无 | 用户手机号 |

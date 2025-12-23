@@ -9,8 +9,6 @@ CREATE TABLE users (
     student_id            VARCHAR(20)     UNIQUE NOT NULL                                           COMMENT '学号',
     password_hash         VARCHAR(255)    NOT NULL                                                  COMMENT '密码哈希（加密存储）',
     salt                  VARCHAR(32)     NOT NULL                                                  COMMENT '密码盐值',
-    role                  VARCHAR(20)     DEFAULT 'student'                                         COMMENT '角色',
-    force_password_change BOOLEAN         DEFAULT TRUE                                              COMMENT '是否强制修改密码',
     failed_attempts       INT             DEFAULT 0                                                 COMMENT '连续登录失败次数',
     locked_until          DATETIME        DEFAULT NULL                                              COMMENT '账户锁定截止时间',
     name                  VARCHAR(50)     NOT NULL                                                  COMMENT '姓名',
