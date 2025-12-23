@@ -12,8 +12,6 @@ import java.security.SecureRandom;
  * SHA-1加密类（包含salt）
  * 依赖commons-lang3.jar和commons-codec.jar
  * @className SHA1Utils.java
- * @author jitwxs
- * @version 创建时间：2017年10月18日 下午9:18:38
  */
 public class SHA1Utils {
 	public static final int HASH_INTERATIONS = 1024;
@@ -24,8 +22,6 @@ public class SHA1Utils {
 
 	/**
 	 * 生成安全的密码，生成随机的16位salt并经过1024次 sha-1 hash
-	 * @author jitwxs
-	 * @version 创建时间：2017年10月18日 下午9:10:31 
 	 * @param plainPassword 明文
 	 * @return 密文(56位)
 	 */

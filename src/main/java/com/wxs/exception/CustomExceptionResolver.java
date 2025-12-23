@@ -9,8 +9,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * Author: jitwxs
- * Date: 2017-10-11
  * 全局异常处理器
  */
 public class CustomExceptionResolver implements HandlerExceptionResolver {

@@ -1,8 +1,6 @@
 package com.wxs.exception;
 
 /**
- * Author: jitwxs
- * Date: 2017-10-11
  * 系统自定义异常类，针对预期异常，需要在程序中抛出此类的异常
  */
 public class CustomException extends Exception {
