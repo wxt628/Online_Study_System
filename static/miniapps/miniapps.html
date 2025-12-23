@@ -11,25 +11,68 @@
 </head>
 <body>
     <!-- 顶部导航栏 -->
-    <header class="mini-navbar">
+    <header class="navbar">
         <div class="container">
-            <a href="../home-page/index.html" class="back-home">
-                <i class="fas fa-arrow-left"></i> 返回首页
-            </a>
-            
-            <div class="mini-logo">
-                <i class="fas fa-th-large"></i>
-                <span>校园小程序平台</span>
+            <div class="logo">
+                <i class="fas fa-graduation-cap"></i>
+                <span>校园综合平台</span>
             </div>
             
-            <div class="mini-user-info" id="mini-user-info">
-                <div class="user-avatar">
-                    <img id="mini-user-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=guest" alt="用户头像">
+            <nav class="nav-links">
+                <a href="../home-page/index.html"><i class="fas fa-home"></i> 首页</a>
+                <a href="#" class="active"><i class="fas fa-th-large"></i> 小程序</a>
+                <a href="../homework/homework.html"><i class="fas fa-tasks"></i> 作业</a>
+                <a href="../forum/forum.html"><i class="fas fa-comments"></i> 论坛</a>
+            </nav>
+            
+            <div class="user-profile">
+                <div class="user-info" id="user-info">
+                    <div class="user-avatar">
+                        <img id="user-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=张三" alt="用户头像">
+                    </div>
+                    <div class="user-name" id="user-name">请登录</div>
+                    <i class="fas fa-chevron-down"></i>
                 </div>
-                <span id="mini-user-name">请登录</span>
+                <div class="user-dropdown" id="user-dropdown">
+                    <a href="#" id="login-btn"><i class="fas fa-sign-in-alt"></i> 登录</a>
+                    <a href="#" id="profile-btn" style="display:none;"><i class="fas fa-user"></i> 个人信息</a>
+                    <a href="#" id="logout-btn" style="display:none;"><i class="fas fa-sign-out-alt"></i> 退出登录</a>
+                </div>
             </div>
+            
+            <button class="mobile-menu-btn" id="mobile-menu-btn">
+                <i class="fas fa-bars"></i>
+            </button>
         </div>
     </header>
+
+    <!-- 登录模态框 -->
+    <div class="modal" id="login-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>用户登录</h2>
+                <button class="modal-close" id="login-modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="student-id"><i class="fas fa-id-card"></i> 学号</label>
+                        <input type="text" id="student-id" placeholder="请输入学号" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password"><i class="fas fa-lock"></i> 密码</label>
+                        <input type="password" id="password" placeholder="请输入密码" required>
+                    </div>
+                    <div class="form-group form-check">
+                        <input type="checkbox" id="remember-me">
+                        <label for="remember-me">记住我</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">登录</button>
+                </form>
+                <div class="login-message" id="login-message"></div>
+            </div>
+        </div>
+    </div>
 
     <!-- 搜索和筛选区域 -->
     <section class="mini-search-section">
@@ -200,7 +243,7 @@
     </div>
 
     <!-- 底部导航栏 -->
-    <nav class="mini-bottom-nav">
+    <!-- <nav class="mini-bottom-nav">
         <a href="#" class="nav-item active">
             <i class="fas fa-th-large"></i>
             <span>首页</span>
@@ -217,7 +260,7 @@
             <i class="fas fa-user"></i>
             <span>我</span>
         </a>
-    </nav>
+    </nav> -->
 
     <!-- 页脚 -->
     <footer class="mini-footer">

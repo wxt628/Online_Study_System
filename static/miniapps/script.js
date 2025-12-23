@@ -1,9 +1,475 @@
+// 小程序平台数据管理
+const miniProgramData = {
+    // 当前用户信息
+    currentUser: null,
+    
+    // 平台统计信息
+    stats: {
+        todayUseCount: 2453,
+        activeUserCount: 5867,
+        dataUpdateTime: "2024-12-20 15:30"
+    },
+    
+    // 小程序列表数据
+    miniPrograms: [
+        {
+            program_id: 1,
+            name: "校园一卡通",
+            description: "校园卡充值、消费记录查询",
+            long_description: "校园一卡通小程序提供校园卡的在线充值、消费记录查询、余额查询、挂失解挂等服务。支持微信支付、支付宝等多种支付方式，方便快捷。",
+            category: "生活服务",
+            icon_fa: "fa-id-card",
+            display_order: 1,
+            use_count: 12543,
+            rating: 4.8,
+            last_updated: "2024-12-01T10:00:00",
+            is_active: true,
+            is_official: true,
+            url: "https://campus-card.example.com",
+            tags: ["充值", "查询", "校园卡"]
+        },
+        {
+            program_id: 2,
+            name: "图书馆预约",
+            description: "图书馆座位、书籍预约系统",
+            long_description: "图书馆预约小程序提供图书馆座位预约、书籍借阅预约、研讨室预约等功能。支持实时查看座位使用情况，提前预约心仪座位。",
+            category: "学习工具",
+            icon_fa: "fa-book",
+            display_order: 2,
+            use_count: 8945,
+            rating: 4.7,
+            last_updated: "2024-11-25T14:30:00",
+            is_active: true,
+            is_official: true,
+            url: "https://library-booking.example.com",
+            tags: ["座位", "预约", "图书"]
+        },
+        {
+            program_id: 3,
+            name: "校园课表",
+            description: "个人课程表查询与管理",
+            long_description: "校园课表小程序帮助您管理个人课程表，查看上课时间、地点、教师信息。支持课程提醒、成绩查询等功能，是学习生活的好帮手。",
+            category: "学习工具",
+            icon_fa: "fa-calendar-alt",
+            display_order: 3,
+            use_count: 15678,
+            rating: 4.9,
+            last_updated: "2024-12-10T09:15:00",
+            is_active: true,
+            is_official: true,
+            url: "https://class-schedule.example.com",
+            tags: ["课表", "课程", "提醒"]
+        },
+        {
+            program_id: 4,
+            name: "校园公告",
+            description: "学校新闻、通知公告",
+            long_description: "校园公告小程序实时推送学校重要通知、新闻动态、活动信息。支持按学院、类型筛选，不错过任何重要信息。",
+            category: "校园资讯",
+            icon_fa: "fa-bullhorn",
+            display_order: 4,
+            use_count: 11234,
+            rating: 4.5,
+            last_updated: "2024-12-05T16:20:00",
+            is_active: true,
+            is_official: true,
+            url: "https://campus-news.example.com",
+            tags: ["新闻", "通知", "公告"]
+        },
+        {
+            program_id: 5,
+            name: "成绩查询",
+            description: "课程成绩查询与分析",
+            long_description: "成绩查询小程序提供详细的成绩查询功能，包括历年成绩、绩点计算、成绩趋势分析等，帮助您更好地了解学习情况。",
+            category: "学习工具",
+            icon_fa: "fa-chart-line",
+            display_order: 5,
+            use_count: 9876,
+            rating: 4.6,
+            last_updated: "2024-11-30T13:45:00",
+            is_active: true,
+            is_official: true,
+            url: "https://grade-query.example.com",
+            tags: ["成绩", "绩点", "分析"]
+        },
+        {
+            program_id: 6,
+            name: "校园导航",
+            description: "校园地图与室内导航",
+            long_description: "校园导航小程序提供详细的校园地图，支持室内外导航、地点搜索、路径规划等功能。帮助新生快速熟悉校园环境。",
+            category: "生活服务",
+            icon_fa: "fa-map-marker-alt",
+            display_order: 6,
+            use_count: 7654,
+            rating: 4.8,
+            last_updated: "2024-12-15T11:30:00",
+            is_active: true,
+            is_official: true,
+            url: "https://campus-map.example.com",
+            tags: ["地图", "导航", "位置"]
+        },
+        {
+            program_id: 7,
+            name: "失物招领",
+            description: "失物发布与认领平台",
+            long_description: "失物招领小程序提供便捷的失物发布和认领服务，帮助同学们快速找回丢失的物品，共建诚信友爱的校园环境。",
+            category: "生活服务",
+            icon_fa: "fa-search",
+            display_order: 7,
+            use_count: 5432,
+            rating: 4.4,
+            last_updated: "2024-12-03T15:10:00",
+            is_active: true,
+            is_official: false,
+            url: "https://lost-found.example.com",
+            tags: ["失物", "招领", "寻物"]
+        },
+        {
+            program_id: 8,
+            name: "社团活动",
+            description: "社团信息与活动报名",
+            long_description: "社团活动小程序汇集全校各类社团信息，提供活动发布、在线报名、活动签到等功能，丰富您的校园文化生活。",
+            category: "校园资讯",
+            icon_fa: "fa-users",
+            display_order: 8,
+            use_count: 6543,
+            rating: 4.7,
+            last_updated: "2024-12-08T14:00:00",
+            is_active: true,
+            is_official: false,
+            url: "https://club-activity.example.com",
+            tags: ["社团", "活动", "报名"]
+        },
+        {
+            program_id: 9,
+            name: "校车时刻",
+            description: "校车班次查询与实时位置",
+            long_description: "校车时刻小程序提供校车班次查询、实时位置跟踪、到站提醒等功能，让您合理安排出行时间，不再错过校车。",
+            category: "生活服务",
+            icon_fa: "fa-bus",
+            display_order: 9,
+            use_count: 4321,
+            rating: 4.9,
+            last_updated: "2024-12-12T08:45:00",
+            is_active: true,
+            is_official: true,
+            url: "https://campus-bus.example.com",
+            tags: ["校车", "班次", "出行"]
+        },
+        {
+            program_id: 10,
+            name: "在线报修",
+            description: "宿舍、教室设施报修服务",
+            long_description: "在线报修小程序提供便捷的设施报修服务，支持拍照上传、进度跟踪、服务评价等功能，快速解决设施问题。",
+            category: "生活服务",
+            icon_fa: "fa-tools",
+            display_order: 10,
+            use_count: 7890,
+            rating: 4.5,
+            last_updated: "2024-11-28T16:30:00",
+            is_active: true,
+            is_official: true,
+            url: "https://repair-service.example.com",
+            tags: ["报修", "维修", "服务"]
+        },
+        {
+            program_id: 11,
+            name: "心理健康",
+            description: "心理咨询与心理测试",
+            long_description: "心理健康小程序提供在线心理咨询、心理测试、心理健康知识普及等服务，关注学生心理健康成长。",
+            category: "校园服务",
+            icon_fa: "fa-heart",
+            display_order: 11,
+            use_count: 3456,
+            rating: 4.8,
+            last_updated: "2024-12-02T10:15:00",
+            is_active: true,
+            is_official: true,
+            url: "https://mental-health.example.com",
+            tags: ["心理", "咨询", "健康"]
+        },
+        {
+            program_id: 12,
+            name: "二手市场",
+            description: "校园二手物品交易平台",
+            long_description: "二手市场小程序提供安全可靠的校园二手物品交易平台，支持物品发布、搜索、在线沟通等功能，方便学生之间物品流转。",
+            category: "生活服务",
+            icon_fa: "fa-shopping-cart",
+            display_order: 12,
+            use_count: 8765,
+            rating: 4.6,
+            last_updated: "2024-12-06T13:20:00",
+            is_active: true,
+            is_official: false,
+            url: "https://second-hand.example.com",
+            tags: ["二手", "交易", "买卖"]
+        }
+    ],
+    
+    // 用户数据
+    users: [
+        {
+            id: 1,
+            name: "张三",
+            student_id: "202310101",
+            avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=张三",
+            department: "计算机科学与技术学院",
+            grade: "2023级"
+        },
+        {
+            id: 2,
+            name: "李四",
+            student_id: "202320202",
+            avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=李四",
+            department: "电子工程学院",
+            grade: "2023级"
+        },
+        {
+            id: 3,
+            name: "王五",
+            student_id: "202330303",
+            avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=王五",
+            department: "经济管理学院",
+            grade: "2022级"
+        }
+    ],
+    
+    // 用户收藏的小程序ID数组（按显示顺序）
+    userFavorites: [1, 3, 5, 7],
+    
+    // 用户最近使用记录
+    userRecentUse: [
+        { program_id: 3, used_at: "2024-12-20T14:30:00" },
+        { program_id: 1, used_at: "2024-12-20T10:15:00" },
+        { program_id: 6, used_at: "2024-12-19T16:45:00" },
+        { program_id: 2, used_at: "2024-12-19T09:30:00" },
+        { program_id: 8, used_at: "2024-12-18T15:20:00" },
+        { program_id: 4, used_at: "2024-12-18T11:10:00" },
+        { program_id: 5, used_at: "2024-12-17T14:00:00" }
+    ],
+    
+    // 推荐的小程序ID数组
+    recommendedPrograms: [2, 6, 9, 11, 12],
+    
+    // 初始化
+    init: function() {
+        this.loadFromStorage();
+        
+        // 如果没有用户数据，设置默认用户
+        if (!this.currentUser && this.users.length > 0) {
+            this.currentUser = this.users[0];
+        }
+        
+        return this;
+    },
+    
+    // 从本地存储加载数据
+    loadFromStorage: function() {
+        try {
+            const userData = localStorage.getItem('miniProgram_user');
+            const favoritesData = localStorage.getItem('miniProgram_favorites');
+            const recentData = localStorage.getItem('miniProgram_recent');
+            
+            if (userData) {
+                this.currentUser = JSON.parse(userData);
+            }
+            
+            if (favoritesData) {
+                this.userFavorites = JSON.parse(favoritesData);
+            }
+            
+            if (recentData) {
+                this.userRecentUse = JSON.parse(recentData);
+            }
+        } catch (e) {
+            console.error('加载本地存储数据失败:', e);
+        }
+    },
+    
+    // 保存用户数据到本地存储
+    saveUserToStorage: function() {
+        try {
+            localStorage.setItem('miniProgram_user', JSON.stringify(this.currentUser));
+        } catch (e) {
+            console.error('保存用户数据失败:', e);
+        }
+    },
+    
+    // 保存收藏数据到本地存储
+    saveFavoritesToStorage: function() {
+        try {
+            localStorage.setItem('miniProgram_favorites', JSON.stringify(this.userFavorites));
+        } catch (e) {
+            console.error('保存收藏数据失败:', e);
+        }
+    },
+    
+    // 保存最近使用数据到本地存储
+    saveRecentUseToStorage: function() {
+        try {
+            localStorage.setItem('miniProgram_recent', JSON.stringify(this.userRecentUse));
+        } catch (e) {
+            console.error('保存最近使用数据失败:', e);
+        }
+    },
+    
+    // 根据分类获取小程序
+    getProgramsByCategory: function(category) {
+        if (category === 'all') {
+            return this.miniPrograms.filter(p => p.is_active);
+        }
+        return this.miniPrograms.filter(p => p.is_active && p.category === category);
+    },
+    
+    // 搜索小程序
+    searchPrograms: function(query) {
+        const lowercaseQuery = query.toLowerCase();
+        return this.miniPrograms.filter(p => 
+            p.is_active && (
+                p.name.toLowerCase().includes(lowercaseQuery) ||
+                p.description.toLowerCase().includes(lowercaseQuery) ||
+                p.tags.some(tag => tag.toLowerCase().includes(lowercaseQuery)) ||
+                p.category.toLowerCase().includes(lowercaseQuery)
+            )
+        );
+    },
+    
+    // 根据ID获取小程序
+    getProgramById: function(programId) {
+        return this.miniPrograms.find(p => p.program_id === programId);
+    },
+    
+    // 获取推荐的小程序
+    getRecommendedPrograms: function() {
+        return this.recommendedPrograms
+            .map(id => this.getProgramById(id))
+            .filter(p => p && p.is_active);
+    },
+    
+    // 获取用户最近使用的小程序
+    getUserRecentPrograms: function(limit = 6) {
+        return this.userRecentUse
+            .slice(0, limit)
+            .map(item => {
+                const program = this.getProgramById(item.program_id);
+                return program ? { ...program, used_at: item.used_at } : null;
+            })
+            .filter(p => p !== null);
+    },
+    
+    // 获取用户收藏的小程序
+    getUserFavorites: function() {
+        return this.userFavorites
+            .map(id => this.getProgramById(id))
+            .filter(p => p && p.is_active);
+    },
+    
+    // 检查小程序是否已收藏
+    isProgramFavorited: function(programId) {
+        return this.userFavorites.includes(programId);
+    },
+    
+    // 切换收藏状态
+    toggleFavorite: function(programId) {
+        const index = this.userFavorites.indexOf(programId);
+        
+        if (index > -1) {
+            // 如果已收藏，移除
+            this.userFavorites.splice(index, 1);
+            this.saveFavoritesToStorage();
+            return false;
+        } else {
+            // 如果未收藏，添加
+            this.userFavorites.push(programId);
+            this.saveFavoritesToStorage();
+            return true;
+        }
+    },
+    
+    // 添加最近使用记录
+    addRecentUse: function(programId) {
+        // 移除已存在的记录
+        this.userRecentUse = this.userRecentUse.filter(item => item.program_id !== programId);
+        
+        // 添加新记录到开头
+        this.userRecentUse.unshift({
+            program_id: programId,
+            used_at: new Date().toISOString()
+        });
+        
+        // 只保留最近的20条记录
+        if (this.userRecentUse.length > 20) {
+            this.userRecentUse = this.userRecentUse.slice(0, 20);
+        }
+        
+        this.saveRecentUseToStorage();
+    },
+    
+    // 清空最近使用记录
+    clearRecentUse: function() {
+        this.userRecentUse = [];
+        this.saveRecentUseToStorage();
+    },
+    
+    // 格式化时间显示（几分钟前、几小时前等）
+    formatTimeAgo: function(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffInSeconds = Math.floor((now - date) / 1000);
+        
+        if (diffInSeconds < 60) {
+            return '刚刚';
+        } else if (diffInSeconds < 3600) {
+            const minutes = Math.floor(diffInSeconds / 60);
+            return `${minutes}分钟前`;
+        } else if (diffInSeconds < 86400) {
+            const hours = Math.floor(diffInSeconds / 3600);
+            return `${hours}小时前`;
+        } else {
+            const days = Math.floor(diffInSeconds / 86400);
+            if (days < 7) {
+                return `${days}天前`;
+            } else {
+                // 显示具体日期
+                return date.toLocaleDateString('zh-CN', { 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+            }
+        }
+    },
+    
+    // 获取小程序图标颜色（根据ID生成确定性的颜色）
+    getIconColor: function(programId) {
+        const colors = [
+            '#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0',
+            '#118AB2', '#073B4C', '#EF476F', '#7209B7',
+            '#3A86FF', '#FB5607', '#8338EC', '#FF006E'
+        ];
+        return colors[programId % colors.length];
+    },
+    
+    // 获取所有分类
+    getCategories: function() {
+        const categories = new Set();
+        this.miniPrograms.forEach(p => {
+            if (p.is_active) {
+                categories.add(p.category);
+            }
+        });
+        return Array.from(categories);
+    }
+};
+
+// 初始化miniProgramData
+miniProgramData.init();
+
 // 小程序平台主逻辑
 document.addEventListener('DOMContentLoaded', function() {
     // DOM元素
-    const miniUserInfo = document.getElementById('mini-user-info');
-    const miniUserName = document.getElementById('mini-user-name');
-    const miniUserAvatar = document.getElementById('mini-user-avatar');
+    const miniUserInfo = document.getElementById('user-info');
+    const miniUserName = document.getElementById('user-name');
+    const miniUserAvatar = document.getElementById('user-avatar');
     const miniSearchInput = document.getElementById('mini-search-input');
     const clearSearchBtn = document.getElementById('clear-search-btn');
     const searchTags = document.querySelectorAll('.search-tag');
@@ -662,24 +1128,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 清空最近使用记录
         clearRecentBtn.addEventListener('click', clearRecentUse);
-        
-        // 底部导航 - 我的小程序
-        myMiniNav.addEventListener('click', function(e) {
-            e.preventDefault();
-            document.querySelector('.my-mini-section').scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-        });
-        
-        // 底部导航 - 最近使用
-        recentMiniNav.addEventListener('click', function(e) {
-            e.preventDefault();
-            document.querySelector('.recent-section').scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-        });
         
         // 推荐刷新
         recommendRefresh.addEventListener('click', function() {
