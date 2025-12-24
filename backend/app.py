@@ -155,6 +155,11 @@ async def update_user(
 				"avatar_url": user.avatar_url,
 				"created_at": user.created_at.isoformat() if getattr(user, 'created_at', None) else None,
 				"updated_at": user.updated_at.isoformat() if getattr(user, 'updated_at', None) else None,
+				"email": user.email,
+				"phone": user.phone,
+				"avatar_url": user.avatar_url,
+				"created_at": user.created_at.isoformat() if getattr(user, 'created_at', None) else None,
+				"updated_at": user.updated_at.isoformat() if getattr(user, 'updated_at', None) else None,
 			}
 		}
 	finally:
@@ -194,7 +199,7 @@ class MiniProgramOut(BaseModel):
 	category: str
 	is_active: bool
 	display_order: int
-	created_at: datetime
+	created_at: str
 
 class MiniProgramList(BaseModel):
 	mini_programs_list: list[MiniProgramOut]
@@ -214,18 +219,7 @@ def get_mini_programs(
 			query = query.filter(database.MiniProgram.category == category)
 		items = query.all()
 		
-		return [MiniProgramOut(
-			program_id=x.program_id,
-			name=x.name,
-			icon_url=x.icon_url,
-			description=x.description,
-			url=x.url,
-			category=x.category,
-			is_active=x.is_active,
-			display_order=x.display_order,
-			created_at=x.created_at
-		) for x in items ]
-
+		return [MiniProgramOut( x.program_id, x.name, x.icon_url, x.description, x.url, x.category, x.is_active, x.display_order, x.created_at ) for x in items ]
 	finally:
 		db.close()
 
@@ -346,117 +340,211 @@ except Exception:
 
 @app.get("/api/v1/posts")
 def list_posts(
-	category: str | None = None,
-	sort_by: str | None = Query("created_at"),
-	order: str | None = Query("desc"),
-	page: int = Query(1, ge=1),
-	pageSize: int = Query(20, ge=1, le=200),
-	_: database.User = Depends(get_current_user)
+    category: str | None = None,
+    sort_by: str | None = Query("created_at"),
+    order: str | None = Query("desc"),
+    page: int = Query(1, ge=1),
+    pageSize: int = Query(20, ge=1, le=200),
+    _: database.User = Depends(get_current_user)
 ):
-	db = database.SessionLocal()
-	try:
-		q = db.query(database.Post)
-		if category:
-			q = q.filter(database.Post.category == category)
+    db = database.SessionLocal()
+    try:
+        q = db.query(database.Post).options(joinedload(database.Post.user))
+        if category:
+            q = q.filter(database.Post.category == category)
 
-		total = q.count()
-		if sort_by == 'like_count':
-			order_col = database.Post.like_count
-		elif sort_by == 'view_count':
-			order_col = database.Post.view_count
-		else:
-			order_col = database.Post.created_at
+        total = q.count()
+        if sort_by == 'like_count':
+            order_col = database.Post.like_count
+        elif sort_by == 'view_count':
+            order_col = database.Post.view_count
+        else:
+            order_col = database.Post.created_at
 
-		if order == 'asc':
-			q = q.order_by(asc(order_col))
-		else:
-			q = q.order_by(desc(order_col))
+        if order == 'asc':
+            q = q.order_by(asc(order_col))
+        else:
+            q = q.order_by(desc(order_col))
 
-		items = q.offset((page-1)*pageSize).limit(pageSize).all()
+        items = q.offset((page-1)*pageSize).limit(pageSize).all()
 
-		result_items = []
-		for p in items:
-			comment_count = db.query(func.count(database.Comment.comment_id)).filter(database.Comment.post_id == p.post_id).scalar()
-			result_items.append({
-				'post_id': p.post_id,
-				'title': p.title,
-				'content_preview': (p.content[:120] + '...') if p.content and len(p.content) > 120 else p.content,
-				'author': { 'user_id': p.user_id },
-				'category': p.category,
-				'like_count': p.like_count,
-				'view_count': p.view_count,
-				'comment_count': comment_count,
-				'created_at': p.created_at,
-			})
+        result_items = []
+        for p in items:
+            comment_count = db.query(func.count(database.Comment.comment_id)).filter(database.Comment.post_id == p.post_id).scalar()
+            result_items.append({
+                'post_id': p.post_id,
+                'title': p.title,
+                'content_preview': (p.content[:120] + '...') if p.content and len(p.content) > 120 else p.content,
+                'author': {
+                    'user_id': p.user.user_id,
+                    'student_id': p.user.student_id,
+                    'name': p.user.name,
+                    'avatar_url': p.user.avatar_url
+                },
+                'category': p.category,
+                'like_count': p.like_count,
+                'view_count': p.view_count,
+                'comment_count': comment_count,
+                'created_at': p.created_at,
+            })
 
-		return { 'code': 200, 'message': '成功', 'data': { 'items': result_items, 'pagination': { 'total': total, 'page': page, 'pageSize': pageSize, 'totalPages': math.ceil(total / pageSize) } } }
-	finally:
-		db.close()
-
+        return { 'code': 200, 'message': '成功', 'data': { 'items': result_items, 'pagination': { 'total': total, 'page': page, 'pageSize': pageSize, 'totalPages': math.ceil(total / pageSize) } } }
+    finally:
+        db.close()
 
 @app.get("/api/v1/posts/{post_id}")
 def get_post(post_id: int, page: int = Query(1, ge=1), pageSize: int = Query(20, ge=1), _: database.User = Depends(get_current_user)):
-	db = database.SessionLocal()
-	try:
-		post = db.query(database.Post).filter(database.Post.post_id == post_id).first()
-		if not post:
-			raise HTTPException(status_code=404, detail={"error": {"message": "帖子不存在"}})
+    db = database.SessionLocal()
+    try:
+        # 使用 joinedload 加载用户信息
+        post = db.query(database.Post).options(joinedload(database.Post.user)).filter(database.Post.post_id == post_id).first()
+        if not post:
+            raise HTTPException(status_code=404, detail={"error": {"message": "帖子不存在"}})
 
-		# increment view count
-		post.view_count = int(post.view_count) + 1
-		db.commit()
+        # increment view count
+        post.view_count = int(post.view_count) + 1
+        db.commit()
 
-		# comments pagination (top-level comments)
-		comments_q = db.query(database.Comment).filter(database.Comment.post_id == post_id, database.Comment.parent_id == None).order_by(database.Comment.created_at.desc())
-		total_comments = comments_q.count()
-		comments = comments_q.offset((page-1)*pageSize).limit(pageSize).all()
+        # comments pagination (top-level comments) - 同时加载评论用户信息
+        comments_q = db.query(database.Comment).options(joinedload(database.Comment.user)).filter(database.Comment.post_id == post_id, database.Comment.parent_id == None).order_by(database.Comment.created_at.desc())
+        total_comments = comments_q.count()
+        comments = comments_q.offset((page-1)*pageSize).limit(pageSize).all()
 
-		def to_comment_obj(c):
-			replies = []
-			for r in c.replies:
-				replies.append({ 'comment_id': r.comment_id, 'post_id': r.post_id, 'user_id': r.user_id, 'content': r.content, 'parent_id': r.parent_id, 'created_at': r.created_at })
-			return { 'comment_id': c.comment_id, 'post_id': c.post_id, 'user_id': c.user_id, 'content': c.content, 'parent_id': c.parent_id, 'created_at': c.created_at, 'replies': replies }
+        def to_comment_obj(c):
+            replies = []
+            for r in c.replies:
+                # 加载回复的用户信息
+                reply_user = db.query(database.User).filter(database.User.user_id == r.user_id).first()
+                replies.append({
+                    'comment_id': r.comment_id,
+                    'post_id': r.post_id,
+                    'user_id': r.user_id,
+                    'student_id': reply_user.student_id if reply_user else None,
+                    'name': reply_user.name if reply_user else None,
+                    'content': r.content,
+                    'parent_id': r.parent_id,
+                    'created_at': r.created_at
+                })
+            
+            # 获取评论用户
+            comment_user = db.query(database.User).filter(database.User.user_id == c.user_id).first()
+            return {
+                'comment_id': c.comment_id,
+                'post_id': c.post_id,
+                'user_id': c.user_id,
+                'student_id': comment_user.student_id if comment_user else None,
+                'name': comment_user.name if comment_user else None,
+                'avatar_url': comment_user.avatar_url if comment_user else None,
+                'content': c.content,
+                'parent_id': c.parent_id,
+                'created_at': c.created_at,
+                'replies': replies
+            }
 
-		comment_items = [ to_comment_obj(c) for c in comments ]
+        comment_items = [ to_comment_obj(c) for c in comments ]
 
-		return { 'code': 200, 'message': '成功', 'data': { 'post': { 'post_id': post.post_id, 'title': post.title, 'content': post.content, 'user_id': post.user_id, 'category': post.category, 'like_count': post.like_count, 'view_count': post.view_count, 'created_at': post.created_at, 'updated_at': post.updated_at }, 'comments': { 'items': comment_items, 'pagination': { 'total': total_comments, 'page': page, 'pageSize': pageSize, 'totalPages': math.ceil(total_comments / pageSize) } } } }
-	finally:
-		db.close()
+        return {
+            'code': 200,
+            'message': '成功',
+            'data': {
+                'post': {
+                    'post_id': post.post_id,
+                    'title': post.title,
+                    'content': post.content,
+                    'author': {
+                        'user_id': post.user.user_id,
+                        'student_id': post.user.student_id,
+                        'name': post.user.name,
+                        'avatar_url': post.user.avatar_url
+                    },
+                    'category': post.category,
+                    'like_count': post.like_count,
+                    'view_count': post.view_count,
+                    'created_at': post.created_at,
+                    'updated_at': post.updated_at
+                },
+                'comments': {
+                    'items': comment_items,
+                    'pagination': {
+                        'total': total_comments,
+                        'page': page,
+                        'pageSize': pageSize,
+                        'totalPages': math.ceil(total_comments / pageSize)
+                    }
+                }
+            }
+        }
+    finally:
+        db.close()
 
 
 @app.post("/api/v1/posts")
 def create_post(title: str = Form(...), content: str = Form(...), category: str | None = Form(None), current_user: database.User = Depends(get_current_user)):
-	db = database.SessionLocal()
-	try:
-		p = database.Post(user_id=current_user.user_id, title=title, content=content, category=(category or '校园'))
-		db.add(p)
-		db.commit()
-		db.refresh(p)
-		return { 'code': 200, 'message': '帖子发布成功', 'data': { 'post_id': p.post_id, 'user_id': p.user_id, 'title': p.title, 'content': p.content, 'category': p.category, 'like_count': p.like_count, 'view_count': p.view_count, 'created_at': p.created_at } }
-	finally:
-		db.close()
+    db = database.SessionLocal()
+    try:
+        p = database.Post(user_id=current_user.user_id, title=title, content=content, category=(category or '校园'))
+        db.add(p)
+        db.commit()
+        db.refresh(p)
+        # 重新加载用户信息以获取完整数据
+        p = db.query(database.Post).options(joinedload(database.Post.user)).filter(database.Post.post_id == p.post_id).first()
+        return {
+            'code': 200,
+            'message': '帖子发布成功',
+            'data': {
+                'post_id': p.post_id,
+                'author': {
+                    'user_id': p.user.user_id,
+                    'student_id': p.user.student_id,
+                    'name': p.user.name,
+                    'avatar_url': p.user.avatar_url
+                },
+                'title': p.title,
+                'content': p.content,
+                'category': p.category,
+                'like_count': p.like_count,
+                'view_count': p.view_count,
+                'created_at': p.created_at
+            }
+        }
+    finally:
+        db.close()
 
 
 @app.put("/api/v1/posts/{post_id}")
 def edit_post(post_id: int, title: str | None = Form(None), content: str | None = Form(None), category: str | None = Form(None), current_user: database.User = Depends(get_current_user)):
-	db = database.SessionLocal()
-	try:
-		post = db.query(database.Post).filter(database.Post.post_id == post_id).first()
-		if not post:
-			raise HTTPException(status_code=404, detail="帖子不存在")
-		if post.user_id != current_user.user_id:
-			raise HTTPException(status_code=403, detail="没有权限")
-		if title:
-			post.title = title
-		if content:
-			post.content = content
-		if category:
-			post.category = category
-		post.updated_at = datetime.utcnow()
-		db.commit()
-		return { 'code': 200, 'message': '更新成功', 'data': { 'post_id': post.post_id } }
-	finally:
-		db.close()
+    db = database.SessionLocal()
+    try:
+        # 使用 joinedload 加载用户信息
+        post = db.query(database.Post).options(joinedload(database.Post.user)).filter(database.Post.post_id == post_id).first()
+        if not post:
+            raise HTTPException(status_code=404, detail="帖子不存在")
+        if post.user_id != current_user.user_id:
+            raise HTTPException(status_code=403, detail="没有权限")
+        if title:
+            post.title = title
+        if content:
+            post.content = content
+        if category:
+            post.category = category
+        post.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(post)
+        return {
+            'code': 200,
+            'message': '更新成功',
+            'data': {
+                'post_id': post.post_id,
+                'author': {
+                    'user_id': post.user.user_id,
+                    'student_id': post.user.student_id,
+                    'name': post.user.name,
+                    'avatar_url': post.user.avatar_url
+                }
+            }
+        }
+    finally:
+        db.close()
 
 
 @app.delete("/api/v1/posts/{post_id}")
@@ -477,18 +565,35 @@ def delete_post(post_id: int, current_user: database.User = Depends(get_current_
 
 @app.post("/api/v1/posts/{post_id}/comments")
 def create_comment(post_id: int, content: str = Form(...), parent_id: int | None = Form(None), current_user: database.User = Depends(get_current_user)):
-	db = database.SessionLocal()
-	try:
-		post = db.query(database.Post).filter(database.Post.post_id == post_id).first()
-		if not post:
-			raise HTTPException(status_code=404, detail="帖子不存在")
-		c = database.Comment(post_id=post_id, user_id=current_user.user_id, content=content, parent_id=parent_id)
-		db.add(c)
-		db.commit()
-		db.refresh(c)
-		return { 'code': 200, 'message': '评论发表成功', 'data': { 'comment_id': c.comment_id, 'post_id': c.post_id, 'user_id': c.user_id, 'content': c.content, 'parent_id': c.parent_id, 'created_at': c.created_at } }
-	finally:
-		db.close()
+    db = database.SessionLocal()
+    try:
+        post = db.query(database.Post).filter(database.Post.post_id == post_id).first()
+        if not post:
+            raise HTTPException(status_code=404, detail="帖子不存在")
+        c = database.Comment(post_id=post_id, user_id=current_user.user_id, content=content, parent_id=parent_id)
+        db.add(c)
+        db.commit()
+        db.refresh(c)
+        
+        # 获取用户信息
+        user = db.query(database.User).filter(database.User.user_id == current_user.user_id).first()
+        return {
+            'code': 200,
+            'message': '评论发表成功',
+            'data': {
+                'comment_id': c.comment_id,
+                'post_id': c.post_id,
+                'user_id': c.user_id,
+                'student_id': user.student_id if user else None,
+                'name': user.name if user else None,
+                'avatar_url': user.avatar_url if user else None,
+                'content': c.content,
+                'parent_id': c.parent_id,
+                'created_at': c.created_at
+            }
+        }
+    finally:
+        db.close()
 
 
 @app.delete("/api/v1/comments/{comment_id}")
@@ -632,3 +737,6 @@ def submit_assignment(
 		)
 	finally:
 		db.close()
+
+x = hash_password("82ae6c4a65aaa3319b9e883c3f3c01135c6e13d2b620eaa981d8c978d3ecc9de", "2023114514")
+print(x)

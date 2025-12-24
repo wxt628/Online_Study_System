@@ -25,11 +25,11 @@ CREATE INDEX idx_email ON users(email);
 -- 测试
 INSERT INTO users (student_id, salt, password_hash, name, email, created_at, updated_at)
 VALUES (
-    'lyk', 
-    'szuacm2024', 
+    '2023114514', 
     '82ae6c4a65aaa3319b9e883c3f3c01135c6e13d2b620eaa981d8c978d3ecc9de', 
-    'LYK', 
-    'lyk@example.com', 
+    'e2ee7a02863266368937542d5c51a2de1e3c1bb3ec6d8dfed2c9da478b8f5ce2', 
+    '张三', 
+    '2023114514@szu.edu.cn', 
     NOW(), 
     NOW()
 );
