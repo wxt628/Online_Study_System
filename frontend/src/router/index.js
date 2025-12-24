@@ -9,12 +9,12 @@ const routes = [
     component: HomeView,
     meta: { requiresAuth: false }
   },
-//   {
-//     path: '/miniapps',
-//     name: 'miniapps',
-//     component: () => import('../views/MiniappsView.vue'),
-//     meta: { requiresAuth: true }
-//   },
+  {
+    path: '/miniapps',
+    name: 'miniapps',
+    component: () => import('../views/MiniappsView.vue'),
+    meta: { requiresAuth: true }
+  },
 //   {
 //     path: '/homework',
 //     name: 'homework',

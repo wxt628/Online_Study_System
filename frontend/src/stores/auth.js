@@ -18,12 +18,10 @@ export const useAuthStore = defineStore('auth', () => {
     
     try {
       const response = await login(credentials)
-      const { token: authToken, user: userData } = response.data
-      
+      const { token: authToken, student_id: userData } = response.data
       // 存储 token 和用户信息
       token.value = authToken
       user.value = userData
-      console.log(authToken)
       localStorage.setItem('token', authToken)
       localStorage.setItem('user', JSON.stringify(userData))
       return { success: true, data: userData }
@@ -77,6 +75,7 @@ export const useAuthStore = defineStore('auth', () => {
   const init = () => {
     const savedToken = localStorage.getItem('token')
     const savedUser = localStorage.getItem('user')
+
     if (savedToken && savedUser) {
       token.value = savedToken
       user.value = JSON.parse(savedUser)

@@ -15,8 +15,6 @@
       <PostsModule />
     </section>
     
-    <!-- 快捷操作区 -->
-    <QuickActions />
   </main>
 </template>
 

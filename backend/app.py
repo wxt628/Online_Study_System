@@ -31,7 +31,7 @@ class LoginRequest(BaseModel):
 
 class LoginResponse(BaseModel):
 	token: str
-	user_id: str
+	user_id: int
 	student_id: str
 
 LOGIN_LOCK_DURATION = timedelta(minutes=5)

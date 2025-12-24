@@ -106,7 +106,7 @@ const formData = reactive({
 authStore.init()
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const user = computed(() => authStore.user)
-const userName = computed(() => user.value?.student_id || '请登录')
+const userName = computed(() => user.value || '请登录')
 const userAvatar = computed(() => 
   user.value?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=guest'
 )
