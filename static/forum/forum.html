@@ -48,20 +48,6 @@
             </div>
             
             <div class="sidebar-section">
-                <h3><i class="fas fa-chart-line"></i> 热门标签</h3>
-                <div class="tag-cloud" id="tag-cloud">
-                    <span class="tag" data-tag="考试">考试</span>
-                    <span class="tag" data-tag="教材">教材</span>
-                    <span class="tag" data-tag="组队学习">组队学习</span>
-                    <span class="tag" data-tag="宿舍">宿舍</span>
-                    <span class="tag" data-tag="食堂">食堂</span>
-                    <span class="tag" data-tag="运动">运动</span>
-                    <span class="tag" data-tag="二手">二手</span>
-                    <span class="tag" data-tag="社团">社团</span>
-                </div>
-            </div>
-            
-            <div class="sidebar-section">
                 <h3><i class="fas fa-fire"></i> 热帖排行</h3>
                 <ol class="hot-posts-list" id="hot-posts-list">
                     <!-- 热帖将通过JS动态加载 -->
@@ -102,9 +88,6 @@
                             </select>
                         </div>
                         <div class="post-buttons">
-                            <button class="btn btn-secondary" id="add-tag-btn">
-                                <i class="fas fa-tag"></i> 添加标签
-                            </button>
                             <button class="btn btn-primary" id="submit-post-btn">
                                 <i class="fas fa-paper-plane"></i> 发布帖子
                             </button>
@@ -190,34 +173,6 @@
         </div>
     </div>
 
-    <!-- 标签选择模态框 -->
-    <div class="modal" id="tag-select-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>选择标签</h2>
-                <button class="modal-close" id="tag-select-close">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="tag-select-content">
-                    <p>选择最多3个标签：</p>
-                    <div class="available-tags" id="available-tags">
-                        <!-- 标签将通过JS动态加载 -->
-                    </div>
-                    <div class="selected-tags" id="selected-tags">
-                        <p>已选择：<span id="selected-tags-count">0</span>个标签</p>
-                        <div class="selected-tags-list" id="selected-tags-list">
-                            <!-- 已选标签将显示在这里 -->
-                        </div>
-                    </div>
-                    <div class="tag-modal-buttons">
-                        <button class="btn btn-primary" id="confirm-tags-btn">确定</button>
-                        <button class="btn btn-secondary" id="cancel-tags-btn">取消</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- 页脚 -->
     <footer class="forum-footer">
         <div class="container">
@@ -247,3 +202,22 @@
     <script src="script.js"></script>
 </body>
 </html>
+.post-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    cursor: pointer;
+    color: #000000;
+}
+
+/* 删除了.post-title:hover样式 */
+
+.post-content-preview {
+    color: #666;
+    margin-bottom: 15px;
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}

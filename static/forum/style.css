@@ -194,7 +194,6 @@ body {
     margin-bottom: 12px;
     padding-left: 5px;
 }
-
 .hot-posts-list a {
     text-decoration: none;
     color: #555;
@@ -208,7 +207,7 @@ body {
 }
 
 .rules-list {
-    list-style: none;
+list-style: none;
 }
 
 .rules-list li {
@@ -494,17 +493,25 @@ body {
 }
 
 .post-title {
-    font-size: 1.3rem;
+    font-size: 20px;
     font-weight: 600;
-    color: #2c3e50;
     margin-bottom: 10px;
     cursor: pointer;
-    transition: color 0.3s;
+    color: #000000;
 }
 
-.post-title:hover {
-    color: #3498db;
+/* 添加.post-title-link的样式定义 */
+.post-title-link {
+    color: #000000;
+    text-decoration: none;
 }
+
+.post-title-link:hover {
+    color: #000000;
+    text-decoration: none;
+}
+
+/* 删除了.post-title:hover样式 */
 
 .post-content-preview {
     color: #666;
@@ -686,38 +693,68 @@ body {
     max-width: 900px;
 }
 
+e:\应用文件\软件工程\期末大作业\Online_Study_System\static\forum\style.css
+/* 帖子详情头部 */
 .post-detail-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: flex-start;
     margin-bottom: 20px;
     padding-bottom: 20px;
     border-bottom: 1px solid #eee;
 }
 
+/* 作者信息容器 - 恢复正常的flex方向，确保信息显示在头像右侧 */
 .post-detail-author {
     display: flex;
+    flex-direction: row; /* 恢复正常的flex方向 */
     align-items: center;
-    gap: 15px;
+    gap: 15px; /* 信息和头像之间的间距 */
+    width: 100%;
 }
 
+/* 头像样式 */
 .post-detail-avatar {
-    width: 50px;
+    width: 50px; 
     height: 50px;
     border-radius: 50%;
     object-fit: cover;
+    flex-shrink: 0; /* 防止头像被压缩 */
 }
 
+/* 作者信息区域 */
+.post-detail-author-info {
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    flex: 1; /* 让信息区域占据剩余空间 */
+}
+
+/* 用户名样式 */
 .post-detail-author-info h3 {
     margin-bottom: 5px;
     color: #2c3e50;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
+/* 时间和分类容器 */
+.post-detail-meta {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* 时间和分类之间的间距 */
+    flex-wrap: wrap; /* 允许换行 */
+}
+
+/* 时间样式 */
 .post-detail-time {
-    color: #888;
+    color: #666; /* 调整颜色，确保可见性 */
     font-size: 0.9rem;
+    white-space: nowrap;
 }
 
+/* 分类样式 */
 .post-detail-category {
     padding: 8px 15px;
     background-color: #f0f7ff;
@@ -725,6 +762,7 @@ body {
     border-radius: 20px;
     font-size: 0.9rem;
     font-weight: 500;
+    white-space: nowrap;
 }
 
 .post-detail-tags {
@@ -795,7 +833,6 @@ body {
 .post-detail-like-btn i {
     font-size: 1.1rem;
 }
-
 .comments-section {
     margin-top: 30px;
 }

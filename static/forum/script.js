@@ -1,211 +1,81 @@
-// script.js - 校园论坛前端交互脚本
+// 论坛模拟数据和功能实现
 
-// 全局状态
-let currentUser = null;
-let posts = []; // 存储帖子数据
-let currentPage = 1;
-let totalPages = 1;
-let selectedCategory = 'all';
-let selectedTags = [];
-let sortBy = 'created_at';
-let sortOrder = 'desc';
-let searchQuery = '';
+// 全局变量
+let posts = [];
 let hotPosts = [];
+let currentUser = null;
+let currentCategory = 'all';
+let currentPage = 1;
+const postsPerPage = 10;
 
-// DOM 加载完成后初始化
+// 页面加载完成后执行
 document.addEventListener('DOMContentLoaded', function() {
-    // 初始化用户状态
-    initUserState();
+    // 加载模拟数据
+    loadMockData();
     
     // 初始化事件监听器
     initEventListeners();
     
-    // 模拟加载帖子数据
-    loadMockData();
-    
-    // 加载热帖
-    loadHotPosts();
-    
-    // 更新在线人数和今日发帖数
+    // 加载论坛统计信息
     updateForumStats();
+    
+    // 加载用户信息
+    loadUserInfo();
 });
-
-// 初始化用户状态
-function initUserState() {
-    // 检查本地存储中是否有用户信息
-    const savedUser = localStorage.getItem('forumUser');
-    
-    if (savedUser) {
-        currentUser = JSON.parse(savedUser);
-        updateUserUI();
-    } else {
-        // 默认游客状态
-        updateGuestUI();
-    }
-}
-
-// 更新登录用户的UI
-function updateUserUI() {
-    const userAvatar = document.getElementById('forum-user-avatar');
-    const userName = document.getElementById('forum-user-name');
-    const createPostAvatar = document.getElementById('create-post-avatar');
-    
-    if (currentUser) {
-        userAvatar.src = currentUser.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + currentUser.name;
-        userName.textContent = currentUser.name;
-        createPostAvatar.src = currentUser.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + currentUser.name;
-        
-        // 启用发布帖子功能
-        document.getElementById('post-title-input').disabled = false;
-        document.getElementById('post-content-input').disabled = false;
-        document.getElementById('post-category-select').disabled = false;
-        document.getElementById('add-tag-btn').disabled = false;
-        document.getElementById('submit-post-btn').disabled = false;
-    }
-}
-
-// 更新游客的UI
-function updateGuestUI() {
-    const userAvatar = document.getElementById('forum-user-avatar');
-    const userName = document.getElementById('forum-user-name');
-    const createPostAvatar = document.getElementById('create-post-avatar');
-    
-    userAvatar.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=guest';
-    userName.textContent = '请登录';
-    createPostAvatar.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=guest';
-    
-    // 禁用发布帖子功能
-    document.getElementById('post-title-input').disabled = true;
-    document.getElementById('post-content-input').disabled = true;
-    document.getElementById('post-category-select').disabled = true;
-    document.getElementById('add-tag-btn').disabled = true;
-    document.getElementById('submit-post-btn').disabled = true;
-}
 
 // 初始化事件监听器
 function initEventListeners() {
-    // 用户信息点击事件
-    document.getElementById('forum-user-info').addEventListener('click', function() {
-        if (!currentUser) {
-            showLoginPrompt();
-        } else {
-            // 如果已登录，可以显示用户菜单或执行其他操作
-            showToast('已登录为：' + currentUser.name);
-        }
-    });
-    
-    // 分类筛选
-    const categoryItems = document.querySelectorAll('.category-list a');
-    categoryItems.forEach(item => {
-        item.addEventListener('click', function(e) {
+    // 分类筛选事件
+    document.getElementById('category-list').addEventListener('click', function(e) {
+        if (e.target.tagName === 'A') {
             e.preventDefault();
             
-            // 更新活动状态
-            categoryItems.forEach(i => i.classList.remove('active'));
-            this.classList.add('active');
+            // 更新分类状态
+            const categoryLinks = this.querySelectorAll('a');
+            categoryLinks.forEach(link => link.classList.remove('active'));
+            e.target.classList.add('active');
             
-            // 更新选中的分类
-            selectedCategory = this.dataset.category;
+            // 获取选中的分类
+            currentCategory = e.target.dataset.category;
             currentPage = 1;
             
-            // 重新加载帖子
+            // 加载帖子
             loadPosts();
-        });
+        }
     });
     
-    // 标签筛选
-    const tagItems = document.querySelectorAll('.tag-cloud .tag');
-    tagItems.forEach(tag => {
-        tag.addEventListener('click', function() {
-            const tagText = this.dataset.tag;
-            
-            // 切换标签选中状态
-            this.classList.toggle('active');
-            
-            // 更新选中的标签
-            if (this.classList.contains('active')) {
-                if (!selectedTags.includes(tagText)) {
-                    selectedTags.push(tagText);
-                }
-            } else {
-                const index = selectedTags.indexOf(tagText);
-                if (index > -1) {
-                    selectedTags.splice(index, 1);
-                }
-            }
-            
-            // 重新加载帖子
-            currentPage = 1;
-            loadPosts();
-        });
-    });
-    
-    // 排序方式改变
-    document.getElementById('sort-by').addEventListener('change', function() {
-        sortBy = this.value;
-        currentPage = 1;
-        loadPosts();
-    });
-    
-    // 排序顺序改变
-    document.getElementById('order').addEventListener('change', function() {
-        sortOrder = this.value;
-        currentPage = 1;
-        loadPosts();
-    });
-    
-    // 搜索功能
+    // 搜索事件
     document.getElementById('search-btn').addEventListener('click', function() {
-        searchQuery = document.getElementById('search-input').value;
         currentPage = 1;
         loadPosts();
     });
     
-    // 搜索框回车键支持
+    // 回车键搜索
     document.getElementById('search-input').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
-            searchQuery = this.value;
             currentPage = 1;
             loadPosts();
         }
     });
     
-    // 发布帖子按钮
+    // 排序事件
+    document.getElementById('sort-by').addEventListener('change', function() {
+        currentPage = 1;
+        loadPosts();
+    });
+    
+    document.getElementById('order').addEventListener('change', function() {
+        currentPage = 1;
+        loadPosts();
+    });
+    
+    // 发布帖子事件
     document.getElementById('submit-post-btn').addEventListener('click', function() {
-        if (!currentUser) {
-            showLoginPrompt();
-            return;
-        }
-        
         createNewPost();
     });
     
-    // 添加标签按钮
-    document.getElementById('add-tag-btn').addEventListener('click', function() {
-        if (!currentUser) {
-            showLoginPrompt();
-            return;
-        }
-        
-        showTagSelectModal();
-    });
-    
-    // 模态框关闭按钮
-    document.getElementById('post-detail-close').addEventListener('click', function() {
-        closeModal('post-detail-modal');
-    });
-    
-    document.getElementById('login-prompt-close').addEventListener('click', function() {
-        closeModal('login-prompt-modal');
-    });
-    
-    document.getElementById('tag-select-close').addEventListener('click', function() {
-        closeModal('tag-select-modal');
-    });
-    
-    // 登录提示模态框按钮
+    // 登录提示模态框事件
     document.getElementById('go-login-btn').addEventListener('click', function() {
-        // 模拟登录，实际项目中应跳转到登录页面
         simulateLogin();
         closeModal('login-prompt-modal');
     });
@@ -214,45 +84,132 @@ function initEventListeners() {
         closeModal('login-prompt-modal');
     });
     
-    // 标签选择模态框按钮
-    document.getElementById('confirm-tags-btn').addEventListener('click', function() {
-        closeModal('tag-select-modal');
+    // 用户信息点击事件
+    document.getElementById('forum-user-info').addEventListener('click', function() {
+        if (!currentUser) {
+            openModal('login-prompt-modal');
+        }
     });
     
-    document.getElementById('cancel-tags-btn').addEventListener('click', function() {
-        selectedTags = []; // 清空已选标签
-        updateSelectedTagsUI();
-        closeModal('tag-select-modal');
-    });
-    
-    // 点击模态框外部关闭
-    const modals = document.querySelectorAll('.modal');
-    modals.forEach(modal => {
-        modal.addEventListener('click', function(e) {
-            if (e.target === this) {
-                this.style.display = 'none';
-            }
+    // 关闭所有模态框的事件
+    document.querySelectorAll('.modal-close').forEach(closeBtn => {
+        closeBtn.addEventListener('click', function() {
+            const modalId = this.closest('.modal').id;
+            closeModal(modalId);
         });
+    });
+    
+    // 点击模态框外部关闭模态框
+    window.addEventListener('click', function(e) {
+        if (e.target.classList.contains('modal')) {
+            closeModal(e.target.id);
+        }
     });
 }
 
-// 显示帖子详情
-function showPostDetail(postId) {
-    const post = posts.find(p => p.id === postId);
-    if (!post) return;
+// 加载用户信息
+function loadUserInfo() {
+    // 尝试从本地存储获取用户信息
+    const storedUser = localStorage.getItem('forumUser');
     
-    // 更新模态框内容
-    document.getElementById('post-detail-title').textContent = post.title;
+    if (storedUser) {
+        currentUser = JSON.parse(storedUser);
+        updateUserUI();
+    }
+}
+
+// 更新用户界面
+function updateUserUI() {
+    if (currentUser) {
+        document.getElementById('forum-user-avatar').src = currentUser.avatar;
+        document.getElementById('forum-user-name').textContent = currentUser.name;
+        document.getElementById('create-post-avatar').src = currentUser.avatar;
+    } else {
+        document.getElementById('forum-user-avatar').src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=guest';
+        document.getElementById('forum-user-name').textContent = '请登录';
+        document.getElementById('create-post-avatar').src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=guest';
+    }
+}
+
+// 加载帖子
+function loadPosts() {
+    const searchTerm = document.getElementById('search-input').value.toLowerCase();
+    const sortBy = document.getElementById('sort-by').value;
+    const order = document.getElementById('order').value;
     
-    const modalBody = document.getElementById('post-detail-body');
-    modalBody.innerHTML = `
-        <div class="post-detail-header">
-            <div class="post-author">
-                <img src="${post.author.avatar}" alt="${post.author.name}">
-                <div class="author-info">
-                    <h4>${post.author.name}</h4>
-                    <span class="post-time">${formatTime(post.created_at)}</span>
+    // 过滤帖子
+    let filteredPosts = [...posts];
+    
+    // 按分类过滤
+    if (currentCategory !== 'all') {
+        filteredPosts = filteredPosts.filter(post => post.category === currentCategory);
+    }
+    
+    // 按搜索词过滤
+    if (searchTerm) {
+        filteredPosts = filteredPosts.filter(post => 
+            post.title.toLowerCase().includes(searchTerm) || 
+            post.content.toLowerCase().includes(searchTerm)
+        );
+    }
+    
+    // 排序帖子
+    filteredPosts.sort((a, b) => {
+        let aVal = a[sortBy];
+        let bVal = b[sortBy];
+        
+        // 如果是字符串，转换为小写进行比较
+        if (typeof aVal === 'string') {
+            aVal = aVal.toLowerCase();
+            bVal = bVal.toLowerCase();
+        }
+        
+        if (order === 'asc') {
+            return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+        } else {
+            return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
+        }
+    });
+    
+    // 计算分页
+    const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
+    const startIndex = (currentPage - 1) * postsPerPage;
+    const endIndex = startIndex + postsPerPage;
+    const paginatedPosts = filteredPosts.slice(startIndex, endIndex);
+    
+    // 渲染帖子
+    renderPosts(paginatedPosts);
+    
+    // 渲染分页控件
+    renderPagination(totalPages);
+    
+    // 滚动到顶部
+    document.querySelector('.forum-main').scrollIntoView({ behavior: 'smooth' });
+}
+// 渲染帖子列表
+function renderPosts(posts) {
+    const postsContainer = document.getElementById('posts-container');
+    
+    if (posts.length === 0) {
+        postsContainer.innerHTML = '<div class="no-posts">暂无帖子</div>';
+        return;
+    }
+    
+    postsContainer.innerHTML = posts.map(post => `
+        <div class="post-card" data-post-id="${post.id}">
+            <div class="post-header">
+                <div class="post-author">
+                    <img src="${post.author.avatar}" alt="${post.author.name}">
+                    <div class="post-author-info">
+                        <h4>${post.author.name}</h4>
+                        <span>${formatTime(post.created_at)}</span>
+                    </div>
                 </div>
+                <div class="post-category">${post.category}</div>
+            </div>
+            <div class="post-content">
+                <h3 class="post-title"><a href="#" class="post-title-link">${post.title}</a></h3>
+                <p class="post-excerpt">${post.content.substring(0, 150)}${post.content.length > 150 ? '...' : ''}</p>
             </div>
             <div class="post-stats">
                 <span><i class="fas fa-eye"></i> ${post.view_count}</span>
@@ -260,240 +217,61 @@ function showPostDetail(postId) {
                 <span><i class="fas fa-comment"></i> ${post.comment_count}</span>
             </div>
         </div>
-        
-        <div class="post-detail-content">
-            <div class="post-category-tags">
-                <span class="post-category">${post.category}</span>
-                ${post.tags.map(tag => `<span class="post-tag">${tag}</span>`).join('')}
-            </div>
-            <div class="post-text">${post.content}</div>
-        </div>
-        
-        <div class="post-actions-detail">
-            <button class="btn-like ${post.liked ? 'liked' : ''}" data-post-id="${post.id}">
-                <i class="fas fa-heart"></i> 点赞 (${post.like_count})
-            </button>
-            <button class="btn-comment" data-post-id="${post.id}">
-                <i class="fas fa-comment"></i> 评论 (${post.comment_count})
-            </button>
-            <button class="btn-share" data-post-id="${post.id}">
-                <i class="fas fa-share"></i> 分享
-            </button>
-        </div>
-        
-        <div class="comments-section">
-            <h3>评论 (${post.comments.length})</h3>
-            <div class="comment-form">
-                <textarea placeholder="写下你的评论..." id="comment-input-${post.id}"></textarea>
-                <button class="btn btn-primary submit-comment" data-post-id="${post.id}">发表评论</button>
-            </div>
-            <div class="comments-list">
-                ${post.comments.map(comment => `
-                    <div class="comment-item">
-                        <div class="comment-author">
-                            <img src="${comment.author.avatar}" alt="${comment.author.name}">
-                            <div class="comment-author-info">
-                                <h5>${comment.author.name}</h5>
-                                <span class="comment-time">${formatTime(comment.created_at)}</span>
-                            </div>
-                        </div>
-                        <div class="comment-content">${comment.content}</div>
-                    </div>
-                `).join('')}
-            </div>
-        </div>
-    `;
-    
-    // 添加事件监听器到新生成的按钮
-    modalBody.querySelector('.btn-like').addEventListener('click', function() {
-        const postId = parseInt(this.dataset.postId);
-        toggleLike(postId);
-    });
-    
-    modalBody.querySelector('.submit-comment').addEventListener('click', function() {
-        const postId = parseInt(this.dataset.postId);
-        const commentInput = document.getElementById(`comment-input-${postId}`);
-        addComment(postId, commentInput.value);
-        commentInput.value = '';
-    });
-    
-    // 显示模态框
-    openModal('post-detail-modal');
-    
-    // 增加浏览量
-    increaseViewCount(postId);
-}
-
-// 加载帖子数据
-function loadPosts() {
-    // 显示加载状态
-    document.getElementById('loading-posts').style.display = 'flex';
-    document.getElementById('posts-container').style.opacity = '0.7';
-    
-    // 模拟API延迟
-    setTimeout(() => {
-        // 筛选帖子
-        let filteredPosts = [...posts];
-        
-        // 按分类筛选
-        if (selectedCategory !== 'all') {
-            filteredPosts = filteredPosts.filter(post => post.category === selectedCategory);
-        }
-        
-        // 按标签筛选
-        if (selectedTags.length > 0) {
-            filteredPosts = filteredPosts.filter(post => 
-                selectedTags.some(tag => post.tags.includes(tag))
-            );
-        }
-        
-        // 按搜索词筛选
-        if (searchQuery) {
-            const query = searchQuery.toLowerCase();
-            filteredPosts = filteredPosts.filter(post => 
-                post.title.toLowerCase().includes(query) || 
-                post.content.toLowerCase().includes(query)
-            );
-        }
-        
-        // 排序
-        filteredPosts.sort((a, b) => {
-            let aVal, bVal;
-            
-            if (sortBy === 'created_at') {
-                aVal = new Date(a.created_at).getTime();
-                bVal = new Date(b.created_at).getTime();
-            } else {
-                aVal = a[sortBy];
-                bVal = b[sortBy];
-            }
-            
-            return sortOrder === 'desc' ? bVal - aVal : aVal - bVal;
-        });
-        
-        // 分页
-        const postsPerPage = 10;
-        totalPages = Math.ceil(filteredPosts.length / postsPerPage);
-        const startIndex = (currentPage - 1) * postsPerPage;
-        const endIndex = startIndex + postsPerPage;
-        const paginatedPosts = filteredPosts.slice(startIndex, endIndex);
-        
-        // 渲染帖子列表
-        renderPosts(paginatedPosts);
-        
-        // 渲染分页控件
-        renderPagination();
-        
-        // 隐藏加载状态
-        document.getElementById('loading-posts').style.display = 'none';
-        document.getElementById('posts-container').style.opacity = '1';
-    }, 500);
-}
-
-// 渲染帖子列表
-function renderPosts(postsToRender) {
-    const postsContainer = document.getElementById('posts-container');
-    
-    if (postsToRender.length === 0) {
-        postsContainer.innerHTML = `
-            <div class="no-posts">
-                <i class="fas fa-inbox"></i>
-                <h3>暂无帖子</h3>
-                <p>${searchQuery ? '没有找到相关帖子' : '快来发布第一个帖子吧！'}</p>
-            </div>
-        `;
-        return;
-    }
-    
-    postsContainer.innerHTML = postsToRender.map(post => `
-        <div class="post-card" data-post-id="${post.id}">
-            <div class="post-header">
-                <div class="post-author">
-                    <img src="${post.author.avatar}" alt="${post.author.name}">
-                    <div class="author-info">
-                        <h4>${post.author.name}</h4>
-                        <span class="post-time">${formatTime(post.created_at)}</span>
-                    </div>
-                </div>
-                <div class="post-category">${post.category}</div>
-            </div>
-            
-            <div class="post-body">
-                <h3 class="post-title">${post.title}</h3>
-                <p class="post-preview">${post.content.length > 150 ? post.content.substring(0, 150) + '...' : post.content}</p>
-                <div class="post-tags">
-                    ${post.tags.map(tag => `<span class="post-tag">${tag}</span>`).join('')}
-                </div>
-            </div>
-            
-            <div class="post-footer">
-                <div class="post-stats">
-                    <span><i class="fas fa-eye"></i> ${post.view_count}</span>
-                    <span><i class="fas fa-heart"></i> ${post.like_count}</span>
-                    <span><i class="fas fa-comment"></i> ${post.comment_count}</span>
-                </div>
-                <button class="btn-read-more" data-post-id="${post.id}">阅读全文</button>
-            </div>
-        </div>
     `).join('');
     
-    // 为"阅读全文"按钮添加事件监听器
-    document.querySelectorAll('.btn-read-more').forEach(button => {
-        button.addEventListener('click', function() {
+    // 为整个帖子卡片添加点击事件（替换之前的标题点击事件）
+    postsContainer.querySelectorAll('.post-card').forEach(card => {
+        card.addEventListener('click', function(e) {
+            // 防止点击内部链接时触发
+            if (e.target.tagName === 'A' && e.target.classList.contains('post-title-link')) {
+                e.preventDefault();
+            }
             const postId = parseInt(this.dataset.postId);
             showPostDetail(postId);
-        });
-    });
-    
-    // 为整个帖子卡片添加点击事件（除了按钮区域）
-    document.querySelectorAll('.post-card').forEach(card => {
-        card.addEventListener('click', function(e) {
-            // 如果点击的是按钮，不触发卡片点击事件
-            if (!e.target.classList.contains('btn-read-more') && 
-                !e.target.closest('.btn-read-more')) {
-                const postId = parseInt(this.dataset.postId);
-                showPostDetail(postId);
-            }
         });
     });
 }
 
 // 渲染分页控件
-function renderPagination() {
+function renderPagination(totalPages) {
     const paginationContainer = document.getElementById('pagination');
     
     if (totalPages <= 1) {
         paginationContainer.innerHTML = '';
         return;
     }
-    
-    let paginationHTML = '';
+let paginationHTML = '';
     
     // 上一页按钮
     if (currentPage > 1) {
-        paginationHTML += `<button class="page-btn prev-next" data-page="${currentPage - 1}"><i class="fas fa-chevron-left"></i> 上一页</button>`;
+        paginationHTML += `<button class="page-btn" data-page="${currentPage - 1}"><i class="fas fa-chevron-left"></i></button>`;
     }
     
     // 页码按钮
-    const maxVisiblePages = 5;
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    const startPage = Math.max(1, currentPage - 2);
+    const endPage = Math.min(totalPages, currentPage + 2);
     
-    if (endPage - startPage + 1 < maxVisiblePages) {
-        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    if (startPage > 1) {
+        paginationHTML += `<button class="page-btn" data-page="1">1</button>`;
+        if (startPage > 2) {
+            paginationHTML += `<span class="page-ellipsis">...</span>`;
+        }
     }
     
     for (let i = startPage; i <= endPage; i++) {
-        if (i === currentPage) {
-            paginationHTML += `<button class="page-btn active" data-page="${i}">${i}</button>`;
-        } else {
-            paginationHTML += `<button class="page-btn" data-page="${i}">${i}</button>`;
+        paginationHTML += `<button class="page-btn ${i === currentPage ? 'active' : ''}" data-page="${i}">${i}</button>`;
+}
+    
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            paginationHTML += `<span class="page-ellipsis">...</span>`;
         }
+        paginationHTML += `<button class="page-btn" data-page="${totalPages}">${totalPages}</button>`;
     }
     
     // 下一页按钮
     if (currentPage < totalPages) {
-        paginationHTML += `<button class="page-btn prev-next" data-page="${currentPage + 1}">下一页 <i class="fas fa-chevron-right"></i></button>`;
+        paginationHTML += `<button class="page-btn" data-page="${currentPage + 1}"><i class="fas fa-chevron-right"></i></button>`;
     }
     
     paginationContainer.innerHTML = paginationHTML;
@@ -540,7 +318,6 @@ function createNewPost() {
         title: title,
         content: content,
         category: category,
-        tags: selectedTags,
         author: {
             id: currentUser.id,
             name: currentUser.name,
@@ -561,7 +338,6 @@ function createNewPost() {
     document.getElementById('post-title-input').value = '';
     document.getElementById('post-content-input').value = '';
     document.getElementById('post-category-select').value = '';
-    selectedTags = [];
     
     // 重新加载帖子
     currentPage = 1;
@@ -747,85 +523,71 @@ function renderHotPosts() {
     });
 }
 
-// 显示标签选择模态框
-function showTagSelectModal() {
-    const availableTags = document.getElementById('available-tags');
-    const tags = ['考试', '教材', '组队学习', '宿舍', '食堂', '运动', '二手', '社团', '考研', '求职', '实习', '讲座', '比赛', '志愿者'];
+// 显示帖子详情
+function showPostDetail(postId) {
+    const post = posts.find(p => p.id === postId);
+    if (!post) return;
     
-    availableTags.innerHTML = tags.map(tag => `
-        <span class="tag-select ${selectedTags.includes(tag) ? 'selected' : ''}" data-tag="${tag}">
-            ${tag}
-        </span>
-    `).join('');
+    // 增加浏览量
+    increaseViewCount(postId);
     
-    // 更新已选标签UI
-    updateSelectedTagsUI();
+    // 更新帖子详情内容
+    document.getElementById('post-detail-title').textContent = post.title;
     
-    // 添加标签选择事件
-    availableTags.querySelectorAll('.tag-select').forEach(tag => {
-        tag.addEventListener('click', function() {
-            const tagText = this.dataset.tag;
-            
-            if (selectedTags.includes(tagText)) {
-                // 如果已选中，则移除
-                const index = selectedTags.indexOf(tagText);
-                selectedTags.splice(index, 1);
-                this.classList.remove('selected');
-            } else {
-                // 如果未选中，则添加（最多3个）
-                if (selectedTags.length < 3) {
-                    selectedTags.push(tagText);
-                    this.classList.add('selected');
-                } else {
-                    showToast('最多只能选择3个标签', 'warning');
-                }
-            }
-            
-            // 更新已选标签UI
-            updateSelectedTagsUI();
-        });
-    });
+    const postDetailBody = document.getElementById('post-detail-body');
+    postDetailBody.innerHTML = `
+    <div class="post-detail-header">
+        <div class="post-detail-author">
+            <img src="${post.author.avatar}" alt="${post.author.name}" class="post-detail-avatar"> <!-- 添加类名 -->
+            <div class="post-detail-author-info">
+                <h3>${post.author.name}</h3>
+                <div class="post-detail-meta"> <!-- 添加容器 -->
+                    <span class="post-detail-time">${formatTime(post.created_at)}</span>
+                    <span class="post-detail-category">${post.category}</span>
+                </div>
+            </div>
+        </div>
+    </div>
     
-    // 打开模态框
-    openModal('tag-select-modal');
-}
-
-// 更新已选标签UI
-function updateSelectedTagsUI() {
-    const selectedTagsList = document.getElementById('selected-tags-list');
-    const selectedTagsCount = document.getElementById('selected-tags-count');
+    <div class="post-detail-content">
+        ${post.content}
+    </div>
     
-    selectedTagsCount.textContent = selectedTags.length;
-    
-    if (selectedTags.length === 0) {
-        selectedTagsList.innerHTML = '<p class="no-tags">暂无选择的标签</p>';
-    } else {
-        selectedTagsList.innerHTML = selectedTags.map(tag => `
-            <span class="selected-tag">
-                ${tag} <i class="fas fa-times remove-tag" data-tag="${tag}"></i>
-            </span>
-        `).join('');
+        <div class="post-detail-actions">
+            <button class="btn btn-secondary btn-like ${post.liked ? 'liked' : ''}" data-post-id="${post.id}" onclick="toggleLike(${post.id})">
+                <i class="fas fa-heart"></i> 点赞 (${post.like_count})
+            </button>
+        </div>
         
-        // 添加移除标签事件
-        selectedTagsList.querySelectorAll('.remove-tag').forEach(icon => {
-            icon.addEventListener('click', function() {
-                const tagText = this.dataset.tag;
-                const index = selectedTags.indexOf(tagText);
-                if (index > -1) {
-                    selectedTags.splice(index, 1);
-                    
-                    // 更新标签选择模态框中的标签状态
-                    const tagElement = document.querySelector(`.tag-select[data-tag="${tagText}"]`);
-                    if (tagElement) {
-                        tagElement.classList.remove('selected');
-                    }
-                    
-                    // 重新更新UI
-                    updateSelectedTagsUI();
-                }
-            });
-        });
-    }
+        <div class="comments-section">
+            <h3>评论 (${post.comment_count})</h3>
+            
+            <div class="add-comment">
+                <textarea id="comment-input-${post.id}" class="comment-input" placeholder="写下你的评论..."></textarea>
+                <button class="btn btn-primary" onclick="addComment(${post.id}, document.getElementById('comment-input-${post.id}').value)">
+                    <i class="fas fa-paper-plane"></i> 发布评论
+                </button>
+            </div>
+            
+            <div class="comments-list">
+                ${post.comments.length > 0 ? post.comments.map(comment => `
+                    <div class="comment-item">
+                        <div class="comment-author">
+                            <img src="${comment.author.avatar}" alt="${comment.author.name}">
+                            <div class="comment-author-info">
+                                <h5>${comment.author.name}</h5>
+                                <span class="comment-time">${formatTime(comment.created_at)}</span>
+                            </div>
+                        </div>
+                        <div class="comment-content">${comment.content}</div>
+                    </div>
+                `).join('') : '<p>暂无评论</p>'}
+            </div>
+        </div>
+    `;
+    
+    // 打开帖子详情模态框
+    openModal('post-detail-modal');
 }
 
 // 显示登录提示模态框
@@ -923,7 +685,6 @@ function loadMockData() {
             title: '高等数学期末复习经验分享',
             content: '这学期的高等数学考试快要到了，我整理了一些复习资料和经验，希望对大家有帮助。重点复习章节是第三章和第五章，历年考题中有60%的内容来自这两章。',
             category: '学习交流',
-            tags: ['考试', '教材', '组队学习'],
             author: {
                 id: 101,
                 name: '学霸小明',
@@ -962,7 +723,6 @@ function loadMockData() {
             title: '北区食堂新窗口试吃报告',
             content: '今天北区食堂二楼新开了个川菜窗口，试了他们的水煮鱼和麻婆豆腐，味道不错，价格也合理。推荐给喜欢辣的同学！',
             category: '校园生活',
-            tags: ['食堂', '美食'],
             author: {
                 id: 104,
                 name: '美食侦探',
@@ -991,7 +751,6 @@ function loadMockData() {
             title: '转让几乎全新的Java编程思想',
             content: '因专业调整，转让一本《Java编程思想（第四版）》，仅翻阅过几次，几乎全新。原价108，现60出。有意者请联系。',
             category: '闲置交易',
-            tags: ['二手', '教材'],
             author: {
                 id: 106,
                 name: '转专业同学',
@@ -1009,7 +768,6 @@ function loadMockData() {
             title: '周末篮球赛招募队员',
             content: '本周末下午3点体育馆有篮球友谊赛，现招募3名队员。要求有一定篮球基础，能打全场。有意者请回复报名！',
             category: '校园活动',
-            tags: ['运动', '社团'],
             author: {
                 id: 107,
                 name: '篮球社长',
@@ -1027,7 +785,6 @@ function loadMockData() {
             title: '关于图书馆延长开放时间的建议',
             content: '期末临近，建议图书馆能将闭馆时间从晚上10点延长到11点，方便同学们复习备考。支持的请点赞！',
             category: '意见建议',
-            tags: ['考试'],
             author: {
                 id: 108,
                 name: '备考学子',
@@ -1045,20 +802,12 @@ function loadMockData() {
     // 添加更多模拟数据
     for (let i = 6; i <= 30; i++) {
         const categories = ['学习交流', '校园生活', '闲置交易', '校园活动', '意见建议'];
-        const tagsList = [
-            ['考试', '教材'],
-            ['食堂', '宿舍'],
-            ['二手', '教材'],
-            ['运动', '社团'],
-            ['考试', '建议']
-        ];
         
         mockPosts.push({
             id: i,
             title: `模拟帖子标题 ${i}`,
             content: `这是第 ${i} 个模拟帖子的内容。这是一个用于测试的帖子，包含一些示例文本。`,
             category: categories[i % categories.length],
-            tags: tagsList[i % tagsList.length],
             author: {
                 id: 200 + i,
                 name: `用户${i}`,
@@ -1077,4 +826,7 @@ function loadMockData() {
     
     // 加载帖子
     loadPosts();
+    
+    // 加载热帖
+    loadHotPosts();
 }
