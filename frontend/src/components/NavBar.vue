@@ -90,6 +90,7 @@ import api from '../api/config'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { showToast } from '../api/Toast'
+import { getMiniProgram } from '../api/interface'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -119,6 +120,8 @@ const userAvatar = computed(() => {
   return root + path
 })
 const toggleDropdown = () => {
+  console.log(getMiniProgram())
+
   showDropdown.value = !showDropdown.value
 }
 

@@ -50,18 +50,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useAuthStore } from '../../stores/auth'
-const authStore = useAuthStore()
-
+import { useMiniAppsStore } from '../../stores/miniApps'
 import ModalShow from '../common/ModalShow.vue'
-const currentProgram = ref(null)
 
-// 响应式数据
-const miniPrograms = ref([])
-const loading = ref(false)
-const userFavorites = ref([])
-const userRecentUse = ref([])
+const authStore = useAuthStore()
+const miniAppsStore = useMiniAppsStore()
+const currentProgram = ref(null)
 
 // 组件属性
 const props = defineProps({
@@ -76,37 +72,28 @@ const props = defineProps({
   activeSort: {
     type: String,
     default: 'display_order'
+  },
+  loading: {  // 添加loading属性
+    type: Boolean,
+    default: false
   }
 })
 
-// ========== 模拟数据区域开始 ==========
-// 统一数据格式，与 MiniAppsModule.vue 一致
-const mockPrograms = [
-  { program_id: 1, name: "校园一卡通", description: "校园卡充值、消费记录查询", url: "#", category: "生活", display_order: 1, updated_at: "2024-03-10T10:00:00Z" },
-  { program_id: 2, name: "图书馆查询", description: "图书借阅、馆藏查询", url: "#", category: "教务", display_order: 2, updated_at: "2024-03-09T15:30:00Z" },
-  { program_id: 3, name: "课表查询", description: "个人课程表查看", url: "#", category: "教务", display_order: 3, updated_at: "2024-03-08T09:15:00Z" },
-  { program_id: 4, name: "电费缴纳", description: "宿舍电费查询与缴纳", url: "#", category: "生活", display_order: 4, updated_at: "2024-03-07T14:20:00Z" },
-  { program_id: 5, name: "成绩查询", description: "学期成绩查询", url: "#", category: "教务", display_order: 5, updated_at: "2024-03-06T11:45:00Z" },
-  { program_id: 6, name: "失物招领", description: "校园失物招领平台", url: "#", category: "生活", display_order: 6, updated_at: "2024-03-05T16:10:00Z" },
-  { program_id: 7, name: "校园网充值", description: "校园网套餐办理与充值", url: "#", category: "生活", display_order: 7, updated_at: "2024-03-04T13:25:00Z" },
-  { program_id: 8, name: "教室预约", description: "自习室、讨论室预约", url: "#", category: "教务", display_order: 8, updated_at: "2024-03-03T08:50:00Z" },
-  { program_id: 9, name: "校园公告", description: "学校新闻、通知公告", url: "#", category: "工具", display_order: 9, updated_at: "2024-03-02T11:30:00Z" },
-  { program_id: 10, name: "校园导航", description: "校园地图与导航", url: "#", category: "工具", display_order: 10, updated_at: "2024-03-01T14:15:00Z" },
-  { program_id: 11, name: "活动报名", description: "校园活动在线报名", url: "#", category: "生活", display_order: 11, updated_at: "2024-02-28T09:45:00Z" },
-  { program_id: 12, name: "校车时刻", description: "校车时刻表查询", url: "#", category: "工具", display_order: 12, updated_at: "2024-02-27T16:20:00Z" }
-]
+// 本地状态用于收藏，确保响应式更新
+const localFavorites = ref([...miniAppsStore.userFavorites])
 
-const mockUserFavorites = [1, 3, 5]
-const mockUserRecentUse = [
-  { program_id: 3, used_at: "2024-12-20T14:30:00" },
-  { program_id: 1, used_at: "2024-12-20T10:15:00" },
-  { program_id: 2, used_at: "2024-12-19T09:30:00" }
-]
-// ========== 模拟数据区域结束 ==========
+// 监听store中的收藏变化
+watch(
+  () => miniAppsStore.userFavorites,
+  (newFavorites) => {
+    localFavorites.value = [...newFavorites]
+  },
+  { deep: true }
+)
 
 // 计算属性
 const filteredPrograms = computed(() => {
-  let programs = miniPrograms.value
+  let programs = miniAppsStore.miniPrograms
   
   // 按分类筛选
   if (props.activeCategory !== 'all') {
@@ -130,8 +117,8 @@ const filteredPrograms = computed(() => {
         return a.name.localeCompare(b.name)
       case 'recent':
         // 按最近使用时间排序
-        const aRecent = userRecentUse.value.find(item => item.program_id === a.program_id)
-        const bRecent = userRecentUse.value.find(item => item.program_id === b.program_id)
+        const aRecent = miniAppsStore.userRecentUse.find(item => item.program_id === a.program_id)
+        const bRecent = miniAppsStore.userRecentUse.find(item => item.program_id === b.program_id)
         
         if (!aRecent && !bRecent) return 0
         if (!aRecent) return 1
@@ -147,35 +134,7 @@ const filteredPrograms = computed(() => {
   return programs
 })
 
-// 生命周期
-onMounted(() => {
-  loadMiniPrograms()
-})
-
 // 方法
-const loadMiniPrograms = async () => {
-  loading.value = true
-  
-  try {
-    // 模拟加载延迟
-    setTimeout(() => {
-      miniPrograms.value = mockPrograms
-      userFavorites.value = mockUserFavorites
-      userRecentUse.value = mockUserRecentUse
-      loading.value = false
-    }, 500)
-    
-  } catch (err) {
-    console.error('加载小程序失败:', err)
-    loading.value = false
-    
-    // 加载失败时使用模拟数据
-    miniPrograms.value = mockPrograms
-    userFavorites.value = mockUserFavorites
-    userRecentUse.value = mockUserRecentUse
-  }
-}
-
 const getIconColor = (programId) => {
   const colors = [
     '#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0',
@@ -185,7 +144,6 @@ const getIconColor = (programId) => {
   return colors[programId % colors.length]
 }
 
-// 与 MiniAppsModule.vue 一致的图标映射函数
 const getProgramIcon = (name) => {
   const icons = {
     '校园一卡通': 'fas fa-credit-card',
@@ -205,7 +163,7 @@ const getProgramIcon = (name) => {
 }
 
 const isProgramFavorited = (programId) => {
-  return userFavorites.value.includes(programId)
+  return localFavorites.value.includes(programId)
 }
 
 const toggleFavorite = (programId) => {
@@ -214,17 +172,12 @@ const toggleFavorite = (programId) => {
     return
   }
   
-  const index = userFavorites.value.indexOf(programId)
+  // 调用store中的方法
+  miniAppsStore.toggleFavorite(programId)
   
-  if (index > -1) {
-    // 取消收藏
-    userFavorites.value.splice(index, 1)
-  } else {
-    // 添加收藏
-    userFavorites.value.push(programId)
-  }
-  
-  emit('favorite-changed', programId, index === -1)
+  // 触发事件
+  const isFavorite = isProgramFavorited(programId)
+  emit('favorite-changed', programId, !isFavorite)
 }
 
 const openMiniProgram = (program) => {
@@ -233,30 +186,14 @@ const openMiniProgram = (program) => {
     showToast('请登录！', 'error')
     return
   }
+  
   currentProgram.value = program
-
   
   // 记录最近使用
-  addRecentUse(program.program_id)
+  miniAppsStore.addRecentUse(program.program_id)
   
   // 打开小程序
   emit('open-program', program)
-}
-
-const addRecentUse = (programId) => {
-  // 移除已存在的记录
-  userRecentUse.value = userRecentUse.value.filter(item => item.program_id !== programId)
-  
-  // 添加新记录到开头
-  userRecentUse.value.unshift({
-    program_id: programId,
-    used_at: new Date().toISOString()
-  })
-  
-  // 只保留最近的20条记录
-  if (userRecentUse.value.length > 20) {
-    userRecentUse.value = userRecentUse.value.slice(0, 20)
-  }
 }
 
 // 事件发射

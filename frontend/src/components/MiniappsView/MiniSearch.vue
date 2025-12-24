@@ -6,12 +6,12 @@
         <i class="fas fa-search"></i>
         <input
           type="text"
-          v-model="searchKeyword"
+          v-model="localSearchKeyword"
           placeholder="搜索小程序..."
           @input="handleSearchInput"
         />
         <button 
-          v-if="searchKeyword" 
+          v-if="localSearchKeyword" 
           class="clear-search-btn show"
           @click="clearSearch"
         >
@@ -26,14 +26,14 @@
           v-for="category in categories" 
           :key="category.value"
           class="category-btn"
-          :class="{ active: activeCategory === category.value }"
+          :class="{ active: localActiveCategory === category.value }"
           @click="filterByCategory(category.value)"
         >
           <i :class="category.icon"></i> {{ category.label }}
         </button>
         <button 
           class="category-btn"
-          :class="{ active: activeCategory === 'all' }"
+          :class="{ active: localActiveCategory === 'all' }"
           @click="filterByCategory('all')"
         >
           <i class="fas fa-list"></i> 全部
@@ -41,7 +41,7 @@
       </div>
       
       <div class="sort-filter">
-        <select v-model="activeSort" @change="handleSortChange">
+        <select v-model="localActiveSort" @change="handleSortChange">
           <option value="display_order">默认排序</option>
           <option value="name">名称排序</option>
           <option value="recent">最近使用</option>
@@ -53,12 +53,28 @@
 </template>
 
 <script setup>
-import { ref, defineEmits } from 'vue'
+import { ref, watch, defineEmits, defineProps } from 'vue'
 
-// 响应式数据
-const searchKeyword = ref('')
-const activeCategory = ref('all')
-const activeSort = ref('display_order')
+// 定义 props
+const props = defineProps({
+  searchKeyword: {
+    type: String,
+    default: ''
+  },
+  activeCategory: {
+    type: String,
+    default: 'all'
+  },
+  activeSort: {
+    type: String,
+    default: 'display_order'
+  }
+})
+
+// 响应式数据 - 使用本地副本，以便在组件内修改
+const localSearchKeyword = ref(props.searchKeyword)
+const localActiveCategory = ref(props.activeCategory)
+const localActiveSort = ref(props.activeSort)
 
 // 分类选项
 const categories = ref([
@@ -79,23 +95,36 @@ let searchTimer = null
 const handleSearchInput = () => {
   clearTimeout(searchTimer)
   searchTimer = setTimeout(() => {
-    emit('search', searchKeyword.value)
+    emit('search', localSearchKeyword.value)
   }, 300)
 }
 
 const clearSearch = () => {
-  searchKeyword.value = ''
+  localSearchKeyword.value = ''
   emit('search', '')
 }
 
 const filterByCategory = (category) => {
-  activeCategory.value = category
+  localActiveCategory.value = category
   emit('filter-category', category)
 }
 
 const handleSortChange = () => {
-  emit('sort-change', activeSort.value)
+  emit('sort-change', localActiveSort.value)
 }
+
+// 监听props的变化，更新本地数据
+watch(() => props.searchKeyword, (newVal) => {
+  localSearchKeyword.value = newVal
+})
+
+watch(() => props.activeCategory, (newVal) => {
+  localActiveCategory.value = newVal
+})
+
+watch(() => props.activeSort, (newVal) => {
+  localActiveSort.value = newVal
+})
 </script>
 
 <style scoped>
@@ -103,6 +132,7 @@ const handleSortChange = () => {
   background-color: #f5f7fa;
   padding: 25px 0;
   border-bottom: 1px solid #eee;
+  margin-bottom: 20px;
 }
 
 .search-container {
@@ -140,7 +170,7 @@ const handleSortChange = () => {
 
 .clear-search-btn {
   position: absolute;
-  right: 15px;
+  right: 50px;
   top: 50%;
   transform: translateY(-50%);
   background: none;

@@ -107,21 +107,6 @@ const searchKeyword = ref('')
 const activeCategory = ref('all')
 const error = ref(null)
 
-// 模拟数据（后期替换为API调用）
-const mockData = {
-  miniPrograms: [
-    { program_id: 1, name: "校园一卡通", icon_url: "/icons/card.png", description: "校园卡充值、消费记录查询", url: "#", category: "生活", display_order: 1, updated_at: "2024-03-10T10:00:00Z" },
-    { program_id: 2, name: "图书馆查询", icon_url: "/icons/library.png", description: "图书借阅、馆藏查询", url: "#", category: "教务", display_order: 2, updated_at: "2024-03-09T15:30:00Z" },
-    { program_id: 3, name: "课表查询", icon_url: "/icons/schedule.png", description: "个人课程表查看", url: "#", category: "教务", display_order: 3, updated_at: "2024-03-08T09:15:00Z" },
-    { program_id: 4, name: "电费缴纳", icon_url: "/icons/electricity.png", description: "宿舍电费查询与缴纳", url: "#", category: "生活", display_order: 4, updated_at: "2024-03-07T14:20:00Z" },
-    { program_id: 5, name: "成绩查询", icon_url: "/icons/grades.png", description: "学期成绩查询", url: "#", category: "教务", display_order: 5, updated_at: "2024-03-06T11:45:00Z" },
-    { program_id: 6, name: "失物招领", icon_url: "/icons/lost-found.png", description: "校园失物招领平台", url: "#", category: "生活", display_order: 6, updated_at: "2024-03-05T16:10:00Z" },
-    { program_id: 7, name: "校园网充值", icon_url: "/icons/network.png", description: "校园网套餐办理与充值", url: "#", category: "生活", display_order: 7, updated_at: "2024-03-04T13:25:00Z" },
-    { program_id: 8, name: "教室预约", icon_url: "/icons/classroom.png", description: "自习室、讨论室预约", url: "#", category: "教务", display_order: 8, updated_at: "2024-03-03T08:50:00Z" }
-  ]
-}
-console.log(getMiniProgram())
-
 // 分类选项
 const categories = ref([
   { label: '教务', value: '教务' },
@@ -167,30 +152,12 @@ const loadMiniPrograms = async () => {
   error.value = null
   
   try {
-    // ========== API调用区域开始 ==========
-    /*
-    // 实际API调用代码（注释状态）
-    const response = await fetchMiniProgramsAPI({
-      category: activeCategory.value === 'all' ? null : activeCategory.value,
-      limit: props.limit
-    })
-    
-    if (response.success) {
-      miniPrograms.value = response.data.miniPrograms
-    } else {
-      error.value = response.error
-      // 加载失败时使用模拟数据
-      miniPrograms.value = mockData.miniPrograms
-    }
-    */
-    // ========== API调用区域结束 ==========
-    
-    // 模拟加载延迟
-    setTimeout(() => {
-      miniPrograms.value = mockData.miniPrograms
+    const response = await getMiniProgram()
+    console.log(response)
+    if (response.status === 200) {
+      miniPrograms.value = response.data
       loading.value = false
-    }, 500)
-    
+    }
   } catch (err) {
     console.error('加载小程序失败:', err)
     error.value = '加载失败，请稍后重试'

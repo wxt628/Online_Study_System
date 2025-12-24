@@ -38,5 +38,8 @@ export const logout = () => {
 }
 
 export const getMiniProgram = () => {
-  return api.get('/mini-programs')
+  return api.get('/mini-programs').then((resp) => {
+    if (resp?.data && resp.data.data) resp.data = resp.data.data
+    return resp
+  })
 }

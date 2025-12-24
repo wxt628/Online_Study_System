@@ -78,107 +78,23 @@
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useAuthStore } from '../../stores/auth'
+import { useMiniAppsStore } from '../../stores/miniApps'
 
 const authStore = useAuthStore()
-
-// 响应式数据
-const miniPrograms = ref([])
-const userFavorites = ref([])
+const miniAppsStore = useMiniAppsStore()
 const showEditModal = ref(false)
 const editListRef = ref(null)
 let sortableInstance = null
 
-// ========== 模拟数据区域开始 ==========
-// 模拟数据（后期替换为API调用）
-const mockPrograms = [
-  {
-    program_id: 1,
-    name: "校园一卡通",
-    description: "校园卡充值、消费记录查询",
-    category: "生活服务",
-    icon_fa: "fa-id-card",
-    display_order: 1
-  },
-  {
-    program_id: 3,
-    name: "校园课表",
-    description: "个人课程表查询与管理",
-    category: "学习工具",
-    icon_fa: "fa-calendar-alt",
-    display_order: 2
-  },
-  {
-    program_id: 5,
-    name: "成绩查询",
-    description: "课程成绩查询与分析",
-    category: "学习工具",
-    icon_fa: "fa-chart-line",
-    display_order: 3
+// 组件属性
+const props = defineProps({
+  favoritePrograms: {
+    type: Array,
+    default: () => []
   }
-]
-
-const mockUserFavorites = [1, 3, 5]
-// ========== 模拟数据区域结束 ==========
-
-// 计算属性
-const favoritePrograms = computed(() => {
-  return userFavorites.value
-    .map(id => miniPrograms.value.find(p => p.program_id === id))
-    .filter(p => p !== undefined)
-})
-
-// 生命周期
-onMounted(() => {
-  loadFavoritePrograms()
 })
 
 // 方法
-const loadFavoritePrograms = async () => {
-  try {
-    // ========== API调用区域开始 ==========
-    /*
-    // 实际API调用代码
-    // 获取小程序列表
-    const response = await fetch('/api/v1/mini-programs', {
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`
-      }
-    })
-    
-    if (response.ok) {
-      const data = await response.json()
-      if (data.code === 200) {
-        miniPrograms.value = data.data.items
-      }
-    }
-    
-    // 获取用户收藏
-    const favoritesResponse = await fetch('/api/v1/users/me/favorites', {
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`
-      }
-    })
-    
-    if (favoritesResponse.ok) {
-      const data = await favoritesResponse.json()
-      if (data.code === 200) {
-        userFavorites.value = data.data.favorites
-      }
-    }
-    */
-    // ========== API调用区域结束 ==========
-    
-    // 使用模拟数据
-    miniPrograms.value = mockPrograms
-    userFavorites.value = mockUserFavorites
-    
-  } catch (err) {
-    console.error('加载收藏小程序失败:', err)
-    miniPrograms.value = mockPrograms
-    userFavorites.value = mockUserFavorites
-  }
-}
-
 const getIconColor = (programId) => {
   const colors = [
     '#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0',
@@ -188,6 +104,8 @@ const getIconColor = (programId) => {
 }
 
 const openMiniProgram = (program) => {
+  // 记录最近使用
+  miniAppsStore.addRecentUse(program.program_id)
   emit('open-program', program)
 }
 
@@ -197,29 +115,10 @@ const toggleFavorite = (programId) => {
     return
   }
   
-  const index = userFavorites.value.indexOf(programId)
+  // 调用store中的方法
+  miniAppsStore.toggleFavorite(programId)
   
-  if (index > -1) {
-    userFavorites.value.splice(index, 1)
-    
-    // ========== API调用区域开始 ==========
-    /*
-    // 实际API调用代码
-    fetch(`/api/v1/mini-programs/${programId}/favorite`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        favorite: false
-      })
-    })
-    */
-    // ========== API调用区域结束 ==========
-    
-    emit('favorite-changed', programId, false)
-  }
+  emit('favorite-changed', programId)
 }
 
 const openEditModal = () => {
@@ -232,12 +131,12 @@ const openEditModal = () => {
   
   // 初始化拖拽排序
   nextTick(() => {
-    if (editListRef.value) {
+    if (editListRef.value && window.Sortable) {
       if (sortableInstance) {
         sortableInstance.destroy()
       }
       
-      sortableInstance = new Sortable(editListRef.value, {
+      sortableInstance = new window.Sortable(editListRef.value, {
         animation: 150,
         ghostClass: 'sortable-ghost',
         chosenClass: 'sortable-chosen',
@@ -250,7 +149,7 @@ const openEditModal = () => {
             newOrder.push(parseInt(item.dataset.programId))
           })
           
-          userFavorites.value = newOrder
+          miniAppsStore.userFavorites = newOrder
         }
       })
     }
@@ -266,31 +165,15 @@ const closeEditModal = () => {
 }
 
 const removeFromFavorites = (programId) => {
-  const index = userFavorites.value.indexOf(programId)
-  if (index > -1) {
-    userFavorites.value.splice(index, 1)
-  }
+  miniAppsStore.toggleFavorite(programId)
 }
 
 const saveEdit = () => {
-  // ========== API调用区域开始 ==========
-  /*
-  // 实际API调用代码
-  fetch('/api/v1/users/me/favorites', {
-    method: 'PUT',
-    headers: {
-      'Authorization': `Bearer ${authStore.token}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      favorites: userFavorites.value
-    })
-  })
-  */
-  // ========== API调用区域结束 ==========
+  // 保存到服务器（模拟）
+  console.log('保存收藏列表:', miniAppsStore.userFavorites)
   
   closeEditModal()
-  emit('save-favorites', userFavorites.value)
+  emit('save-favorites', miniAppsStore.userFavorites)
 }
 
 // 事件发射

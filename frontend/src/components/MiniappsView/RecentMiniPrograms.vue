@@ -33,112 +33,23 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '../../stores/auth'
+import { useMiniAppsStore } from '../../stores/miniApps'
 
 const authStore = useAuthStore()
-
-// 响应式数据
-const miniPrograms = ref([])
-const userRecentUse = ref([])
-
-// ========== 模拟数据区域开始 ==========
-// 模拟数据（后期替换为API调用）
-const mockPrograms = [
-  {
-    program_id: 1,
-    name: "校园一卡通",
-    description: "校园卡充值、消费记录查询",
-    category: "生活服务",
-    icon_fa: "fa-id-card",
-    display_order: 1
-  },
-  {
-    program_id: 2,
-    name: "图书馆预约",
-    description: "图书馆座位、书籍预约系统",
-    category: "学习工具",
-    icon_fa: "fa-book",
-    display_order: 2
-  },
-  {
-    program_id: 3,
-    name: "校园课表",
-    description: "个人课程表查询与管理",
-    category: "学习工具",
-    icon_fa: "fa-calendar-alt",
-    display_order: 3
-  }
-]
-
-const mockUserRecentUse = [
-  { program_id: 3, used_at: "2024-12-20T14:30:00" },
-  { program_id: 1, used_at: "2024-12-20T10:15:00" },
-  { program_id: 2, used_at: "2024-12-19T09:30:00" }
-]
-// ========== 模拟数据区域结束 ==========
+const miniAppsStore = useMiniAppsStore()
 
 // 计算属性
 const recentPrograms = computed(() => {
-  return userRecentUse.value
+  return miniAppsStore.userRecentUse
     .slice(0, 6) // 只显示最近6个
     .map(item => {
-      const program = miniPrograms.value.find(p => p.program_id === item.program_id)
+      const program = miniAppsStore.miniPrograms.find(p => p.program_id === item.program_id)
       return program ? { program, used_at: item.used_at } : null
     })
     .filter(item => item !== null)
 })
 
-// 生命周期
-onMounted(() => {
-  loadRecentPrograms()
-})
-
 // 方法
-const loadRecentPrograms = async () => {
-  try {
-    // ========== API调用区域开始 ==========
-    /*
-    // 实际API调用代码
-    // 获取小程序列表
-    const response = await fetch('/api/v1/mini-programs', {
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`
-      }
-    })
-    
-    if (response.ok) {
-      const data = await response.json()
-      if (data.code === 200) {
-        miniPrograms.value = data.data.items
-      }
-    }
-    
-    // 获取最近使用记录
-    const recentResponse = await fetch('/api/v1/users/me/recent-use', {
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`
-      }
-    })
-    
-    if (recentResponse.ok) {
-      const data = await recentResponse.json()
-      if (data.code === 200) {
-        userRecentUse.value = data.data.recent_use
-      }
-    }
-    */
-    // ========== API调用区域结束 ==========
-    
-    // 使用模拟数据
-    miniPrograms.value = mockPrograms
-    userRecentUse.value = mockUserRecentUse
-    
-  } catch (err) {
-    console.error('加载最近使用记录失败:', err)
-    miniPrograms.value = mockPrograms
-    userRecentUse.value = mockUserRecentUse
-  }
-}
-
 const getIconColor = (programId) => {
   const colors = [
     '#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0',
@@ -148,6 +59,8 @@ const getIconColor = (programId) => {
 }
 
 const openMiniProgram = (program) => {
+  // 记录最近使用
+  miniAppsStore.addRecentUse(program.program_id)
   emit('open-program', program)
 }
 
@@ -158,19 +71,8 @@ const clearRecent = () => {
   }
   
   if (confirm('确定要清空最近使用记录吗？')) {
-    userRecentUse.value = []
-    
-    // ========== API调用区域开始 ==========
-    /*
-    // 实际API调用代码
-    fetch('/api/v1/users/me/recent-use', {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`
-      }
-    })
-    */
-    // ========== API调用区域结束 ==========
+    // 调用store中的方法
+    miniAppsStore.clearRecent()
     
     emit('recent-cleared')
   }
@@ -217,7 +119,6 @@ const emit = defineEmits(['needLogin', 'open-program', 'recent-cleared'])
 .section-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
   margin-bottom: 20px;
 }
 
