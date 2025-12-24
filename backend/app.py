@@ -16,7 +16,6 @@ import hashlib, src.database as database
 from sqlalchemy import func
 import src.storage as storage
 
-
 app = FastAPI(title="Campus Platform API", version="1.0.0")
 app.add_middleware(
 	CORSMiddleware,
@@ -25,6 +24,10 @@ app.add_middleware(
 	allow_methods=["*"],
 	allow_headers=["*"]
 )
+
+@app.get("/")
+def test():
+	return 114514
 
 """ 登录模块 """
 class LoginRequest(BaseModel):
