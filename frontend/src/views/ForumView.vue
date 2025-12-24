@@ -823,9 +823,10 @@ button:hover svg {
 
 /* ===== 行数裁剪兜底 ===== */
 .line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
   overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2; /* 添加标准属性 */
 }
 </style>
