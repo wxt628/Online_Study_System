@@ -97,17 +97,7 @@ def login(payload: LoginRequest):
 	finally:
 		db.close()
 
-# @app.post("/user/update")
-# async def update_user(
-#     name: str = Form(None),
-#     email: str = Form(None),
-#     phone: str = Form(None),
-#     avatar: UploadFile | None = File(None),  # 必须 File(...)
-# ):
-#     print("avatar:", avatar)
-
-
-@app.post("/user/update")
+@app.post("/api/v1/user/update")
 async def update_user(
 	name: str = Form(None),
 	email: str = Form(None),
