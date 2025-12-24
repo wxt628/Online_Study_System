@@ -20,12 +20,14 @@ api.interceptors.request.use(
   }
 )
 
+// 响应拦截器 - 处理错误
 api.interceptors.response.use(
   (response) => {
     return response
   },
   (error) => {
     if (error.response?.status === 401) {
+      // Token 过期，清除本地存储
       localStorage.removeItem('token')
       localStorage.removeItem('user')
     }
