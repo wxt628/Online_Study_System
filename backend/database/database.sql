@@ -165,3 +165,17 @@ CREATE TABLE files (
 
 -- 索引
 CREATE INDEX idx_user_id_files ON files(user_id);
+
+-- 10. 帖子点赞记录（用户级别点赞，避免并发计数问题）
+CREATE TABLE post_likes (
+    like_id INT PRIMARY KEY AUTO_INCREMENT COMMENT '点赞记录ID',
+    post_id INT NOT NULL COMMENT '帖子ID',
+    user_id INT NOT NULL COMMENT '用户ID',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '点赞时间',
+    UNIQUE KEY unique_post_user (post_id, user_id),
+    FOREIGN KEY (post_id) REFERENCES posts(post_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='帖子点赞记录表';
+
+CREATE INDEX idx_post_id_likes ON post_likes(post_id);
+CREATE INDEX idx_user_id_likes ON post_likes(user_id);

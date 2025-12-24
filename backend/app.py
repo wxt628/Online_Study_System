@@ -14,6 +14,7 @@ from src.security import create_access_token, get_current_user
 
 import hashlib, src.database as database
 from sqlalchemy import func
+import src.storage as storage
 
 
 app = FastAPI(title="Campus Platform API", version="1.0.0")
@@ -557,13 +558,8 @@ def mark_all_notifications_read(current_user: database.User = Depends(get_curren
 def upload_file(file: UploadFile = File(...), purpose: str | None = Form(None), related_id: int | None = Form(None), current_user: database.User = Depends(get_current_user)):
 	db = database.SessionLocal()
 	try:
-		os.makedirs(FILES_UPLOAD_DIR, exist_ok=True)
-		filename = f"{int(datetime.utcnow().timestamp())}_{file.filename}"
-		path = f"{FILES_UPLOAD_DIR}/{filename}"
-		with open(path, 'wb') as f:
-			shutil.copyfileobj(file.file, f)
-		file_url = f"/uploads/files/{filename}"
-		rec = database.File(user_id=current_user.user_id, file_name=file.filename, file_url=file_url, file_size=0, mime_type=file.content_type)
+		file_url, size, saved_name = storage.save_uploaded_file(file)
+		rec = database.File(user_id=current_user.user_id, file_name=file.filename, file_url=file_url, file_size=size, mime_type=file.content_type)
 		db.add(rec)
 		db.commit()
 		db.refresh(rec)
@@ -643,14 +639,8 @@ def submit_assignment(
 		db.commit()
 		db.refresh(submission)
 
-		os.makedirs(UPLOAD_DIR, exist_ok=True)
-		file_path = f"{UPLOAD_DIR}/{submission.submission_id}_{file.filename}"
-
-		with open(file_path, "wb") as f:
-			shutil.copyfileobj(file.file, f)
-
-		file_url = f"/files/submissions/{submission.submission_id}/{file.filename}"
-
+		# save submission file via storage helper
+		file_url, size = storage.save_submission_file(file, submission.submission_id)
 		submission.file_url = file_url
 		db.commit()
 		db.refresh(submission)
