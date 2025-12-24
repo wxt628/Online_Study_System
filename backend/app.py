@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from sqlalchemy import create_engine, Column, Integer, String, Float, Text, Enum, ForeignKey, DECIMAL, and_, or_, asc, desc
 from sqlalchemy.orm import sessionmaker, relationship, joinedload, declarative_base
 from typing import Optional
+import os, shutil
 import math
 
 from src.security import create_access_token, get_current_user
@@ -178,11 +179,9 @@ class MiniProgramList(BaseModel):
 	page_size: int
 	page_count: int
 
-@app.get("/api/v1/mini-programs", response_model=MiniProgramList)
+@app.get("/api/v1/mini-programs", response_model=list[MiniProgramOut])
 def get_mini_programs(
 	category: str | None = None,
-	page: int = 1,
-	page_size: int = 20,
 	_: database.User = Depends(get_current_user)
 ):
 	db = database.SessionLocal()
@@ -190,28 +189,9 @@ def get_mini_programs(
 		query = db.query(database.MiniProgram)
 		if category:
 			query = query.filter(database.MiniProgram.category == category)
+		items = query.all()
 		
-		total = query.count()
-		items = query.offset((page - 1) * page_size).limit(page_size).all()
-		
-		return MiniProgramList(
-			[
-				MiniProgramOut(
-					x.program_id,
-					x.name,
-					x.icon_url,
-					x.description,
-					x.url,
-					x.category,
-					x.is_active,
-					x.display_order,
-					x.created_at
-				) for x in items
-			],
-			page,
-			page_size,
-			(total + page_size - 1) // page_size
-		)
+		return [MiniProgramOut( x.program_id, x.name, x.icon_url, x.description, x.url, x.category, x.is_active, x.display_order, x.created_at ) for x in items ],
 	finally:
 		db.close()
 
@@ -223,17 +203,9 @@ class CourseOut(BaseModel):
 	teacher: str
 	semester: str
 
-class CourseSchedule(BaseModel):
-	courses: list[CourseOut]
-	page: int
-	page_size: int
-	page_count: int
-
-@app.get("/api/v1/courses", response_model=CourseSchedule)
+@app.get("/api/v1/courses", response_model=list[CourseOut])
 def get_courses(
 	semester: str | None = None,
-	page: int = 1,
-	page_size: int = 20,
 	_: database.User = Depends(get_current_user)
 ):
 	db = database.SessionLocal()
@@ -241,24 +213,9 @@ def get_courses(
 		query = db.query(database.Course)
 		if semester:
 			query = query.filter(database.Course.semester == semester)
+		items = query.all()
 		
-		total = query.count()
-		items = query.offset((page - 1) * page_size).limit(page_size).all()
-		
-		return MiniProgramList(
-			[
-				MiniProgramOut(
-					x.course_id,
-					x.course_code,
-					x.name,
-					x.teacher,
-					x.semester,
-				) for x in items
-			],
-			page,
-			page_size,
-			(total + page_size - 1) // page_size
-		)
+		return [MiniProgramOut( x.course_id, x.course_code, x.name, x.teacher, x.semester ) for x in items ],
 	finally:
 		db.close()
 
@@ -284,7 +241,7 @@ def get_course_detail(course_id: int, _: database.User = Depends(get_current_use
 		db.close()
 
 """获取课程作业列表"""
-class AssignmentOut:
+class AssignmentOut(BaseModel):
 	assignment_id: int
 	course_id: int
 	title: str
@@ -293,23 +250,105 @@ class AssignmentOut:
 	deadline: str
 	created_at: str
 
-@app.get("/api/v1/courses/{course_id}/assignments", response_model=AssignmentOut)
-def get_course_detail(course_id: int, _: database.User = Depends(get_current_user)):
+@app.get("/api/v1/courses/{course_id}/assignments", response_model=list[AssignmentOut])
+def get_course_assignments(
+	course_id: int,
+	_: database.User = Depends(get_current_user)
+):
 	db = database.SessionLocal()
 	try:
+		# 1. 确认课程存在
 		course = db.query(database.Course).filter(database.Course.course_id == course_id).first()
 		if not course:
-			raise HTTPException(status_code=401, detail={
-				"error": { "message": "课程不存在" }
-			})
-		
-		return MiniProgramOut(
-			course.course_id,
-			course.course_code,
-			course.name,
-			course.teacher,
-			course.semester,
+			raise HTTPException(
+				status_code=404,
+				detail={"error": {"message": "课程不存在"}}
+			)
+
+		# 2. 查询该课程的作业
+		assignments = db.query(database.Assignment).filter(database.Assignment.course_id == course_id).order_by(database.Assignment.deadline).all()
+
+		# 3. 返回作业列表
+		return [AssignmentOut( x.assignment_id, x.course_id, x.title, x.description, x.attachment_url, x.deadline, x.created_at ) for x in assignments ]
+	finally:
+		db.close()
+
+"""根据作业编号获取作业详细"""
+@app.get("/api/v1/assignments/{assignment_id}", response_model=AssignmentOut)
+def get_assignment(
+	assignment_id: int,
+	_: database.User = Depends(get_current_user)
+):
+	db = database.SessionLocal()
+	try:
+		x = db.query(database.Assignment).filter(database.Assignment.course_id == assignment_id).order_by(database.Assignment.deadline).first()
+
+		return AssignmentOut( x.assignment_id, x.course_id, x.title, x.description, x.attachment_url, x.deadline, x.created_at )
+	finally:
+		db.close()
+
+"""提交作业"""
+class SubmissionOut(BaseModel):
+	submission_id: int
+	assignment_id: int
+	user_id: int
+	file_url: str
+	submitted_at: datetime
+	score: int | None
+	feedback: str | None
+
+UPLOAD_DIR = "uploads/submissions"
+
+@app.post(
+	"/api/v1/assignments/{assignment_id}/submit",
+	response_model=SubmissionOut
+)
+def submit_assignment(
+	assignment_id: int,
+	file: UploadFile = File(...),
+	comment: str | None = Form(None),
+	current_user: database.User = Depends(get_current_user)
+):
+	db = database.SessionLocal()
+	try:
+		assignment = db.query(database.Assignment).filter(database.Assignment.assignment_id == assignment_id).first()
+
+		if not assignment:
+			raise HTTPException(
+				status_code=404,
+				detail={"error": {"message": "作业不存在"}}
+			)
+
+		submission = database.Submission(
+			assignment_id=assignment_id,
+			user_id=current_user.user_id,
+			comment=comment,
+			submitted_at=datetime.utcnow()
+		)
+		db.add(submission)
+		db.commit()
+		db.refresh(submission)
+
+		os.makedirs(UPLOAD_DIR, exist_ok=True)
+		file_path = f"{UPLOAD_DIR}/{submission.submission_id}_{file.filename}"
+
+		with open(file_path, "wb") as f:
+			shutil.copyfileobj(file.file, f)
+
+		file_url = f"/files/submissions/{submission.submission_id}/{file.filename}"
+
+		submission.file_url = file_url
+		db.commit()
+		db.refresh(submission)
+
+		return SubmissionOut(
+			submission_id=submission.submission_id,
+			assignment_id=submission.assignment_id,
+			user_id=current_user.user_id,
+			file_url=submission.file_url,
+			submitted_at=submission.submitted_at,
+			score=submission.score,
+			feedback=submission.feedback
 		)
 	finally:
 		db.close()
-	
