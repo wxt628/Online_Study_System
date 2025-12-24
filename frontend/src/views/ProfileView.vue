@@ -157,7 +157,6 @@ const cancelEdit = () => {
 const saveProfile = async () => {
   saving.value = true
   try {
-    // 始终使用 FormData 提交，avatar 可选
     const fd = new FormData()
     if (avatarFile.value) fd.append('avatar', avatarFile.value)
     fd.append('name', form.value.name)
@@ -168,32 +167,19 @@ const saveProfile = async () => {
       fd.append('new_password', form.value.new_password)
     }
 
-    // 最小修改：直接用 axios.post，带 withCredentials
-    const resp = await axios.post(
-      'http://172.31.68.181:8000/user/update',
-      fd,
-      {
-					headers: {
-						Authorization: `Bearer ${authStore.token}`  // ⚠️ 用你登录得到的 token
-					}
-      }
-    )
+		const resp = await api.post('/user/update', fd)
 
     const updated = resp.data?.data || resp.data
     if (resp.data?.code && resp.data.code !== 200) {
       throw new Error(resp.data?.message || '更新失败')
     }
 
-    // update local view and global auth store
     userInfo.value = updated
     try {
       authStore.user = updated
       localStorage.setItem('user', JSON.stringify(updated))
-    } catch (e) {
-      // ignore if store not ready
-    }
+    } catch (e) {}
 
-    // 清理选中的文件和敏感字段
     clearFile()
     form.value.old_password = ''
     form.value.new_password = ''

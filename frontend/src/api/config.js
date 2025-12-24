@@ -4,9 +4,6 @@ import axios from 'axios'
 const api = axios.create({
   baseURL: 'http://172.31.68.181:8000/api/v1',
   timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json'
-  }
 })
 
 // 请求拦截器 - 添加 token
