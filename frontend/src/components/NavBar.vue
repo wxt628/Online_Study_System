@@ -89,7 +89,6 @@ import { ref, computed, onMounted, onUnmounted, reactive, nextTick } from 'vue'
 import api from '../api/config'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { Me } from '../api/interface'
 import { showToast } from '../api/Toast'
 
 const router = useRouter()

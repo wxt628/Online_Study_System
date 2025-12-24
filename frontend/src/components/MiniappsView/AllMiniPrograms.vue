@@ -17,7 +17,7 @@
         @click="openMiniProgram(program)"
       >
         <div class="mini-icon" :style="{ backgroundColor: getIconColor(program.program_id) }">
-          <i :class="program.icon_fa || 'fa-th-large'"></i>
+          <i :class="getProgramIcon(program.name)"></i>
         </div>
         <div class="mini-name">{{ program.name }}</div>
         <div class="mini-category">{{ program.category }}</div>
@@ -57,7 +57,6 @@ const authStore = useAuthStore()
 import ModalShow from '../common/ModalShow.vue'
 const currentProgram = ref(null)
 
-
 // 响应式数据
 const miniPrograms = ref([])
 const loading = ref(false)
@@ -81,73 +80,20 @@ const props = defineProps({
 })
 
 // ========== 模拟数据区域开始 ==========
-// 模拟数据（后期替换为API调用）
+// 统一数据格式，与 MiniAppsModule.vue 一致
 const mockPrograms = [
-  {
-    program_id: 1,
-    name: "校园一卡通",
-    description: "校园卡充值、消费记录查询",
-    long_description: "校园一卡通小程序提供校园卡的在线充值、消费记录查询、余额查询、挂失解挂等服务。支持微信支付、支付宝等多种支付方式，方便快捷。",
-    category: "生活服务",
-    icon_fa: "fa-id-card",
-    display_order: 1,
-    use_count: 12543,
-    rating: 4.8,
-    last_updated: "2024-12-01T10:00:00",
-    is_active: true,
-    is_official: true,
-    url: "https://campus-card.example.com",
-    tags: ["充值", "查询", "校园卡"]
-  },
-  {
-    program_id: 2,
-    name: "图书馆预约",
-    description: "图书馆座位、书籍预约系统",
-    long_description: "图书馆预约小程序提供图书馆座位预约、书籍借阅预约、研讨室预约等功能。支持实时查看座位使用情况，提前预约心仪座位。",
-    category: "学习工具",
-    icon_fa: "fa-book",
-    display_order: 2,
-    use_count: 8945,
-    rating: 4.7,
-    last_updated: "2024-11-25T 14:30:00",
-    is_active: true,
-    is_official: true,
-    url: "https://library-booking.example.com",
-    tags: ["座位", "预约", "图书"]
-  },
-  {
-    program_id: 3,
-    name: "校园课表",
-    description: "个人课程表查询与管理",
-    long_description: "校园课表小程序帮助您管理个人课程表，查看上课时间、地点、教师信息。支持课程提醒、成绩查询等功能，是学习生活的好帮手。",
-    category: "学习工具",
-    icon_fa: "fa-calendar-alt",
-    display_order: 3,
-    use_count: 15678,
-    rating: 4.9,
-    last_updated: "2024-12-10T09:15:00",
-    is_active: true,
-    is_official: true,
-    url: "https://class-schedule.example.com",
-    tags: ["课表", "课程", "提醒"]
-  },
-  {
-    program_id: 4,
-    name: "校园公告",
-    description: "学校新闻、通知公告",
-    long_description: "校园公告小程序实时推送学校重要通知、新闻动态、活动信息。支持按学院、类型筛选，不错过任何重要信息。",
-    category: "校园资讯",
-    icon_fa: "fa-bullhorn",
-    display_order: 4,
-    use_count: 11234,
-    rating: 4.5,
-    last_updated: "2024-12-05T16:20:00",
-    is_active: true,
-    is_official: true,
-    url: "https://campus-news.example.com",
-    tags: ["新闻", "通知", "公告"]
-  },
-  // 更多模拟数据...
+  { program_id: 1, name: "校园一卡通", description: "校园卡充值、消费记录查询", url: "#", category: "生活", display_order: 1, updated_at: "2024-03-10T10:00:00Z" },
+  { program_id: 2, name: "图书馆查询", description: "图书借阅、馆藏查询", url: "#", category: "教务", display_order: 2, updated_at: "2024-03-09T15:30:00Z" },
+  { program_id: 3, name: "课表查询", description: "个人课程表查看", url: "#", category: "教务", display_order: 3, updated_at: "2024-03-08T09:15:00Z" },
+  { program_id: 4, name: "电费缴纳", description: "宿舍电费查询与缴纳", url: "#", category: "生活", display_order: 4, updated_at: "2024-03-07T14:20:00Z" },
+  { program_id: 5, name: "成绩查询", description: "学期成绩查询", url: "#", category: "教务", display_order: 5, updated_at: "2024-03-06T11:45:00Z" },
+  { program_id: 6, name: "失物招领", description: "校园失物招领平台", url: "#", category: "生活", display_order: 6, updated_at: "2024-03-05T16:10:00Z" },
+  { program_id: 7, name: "校园网充值", description: "校园网套餐办理与充值", url: "#", category: "生活", display_order: 7, updated_at: "2024-03-04T13:25:00Z" },
+  { program_id: 8, name: "教室预约", description: "自习室、讨论室预约", url: "#", category: "教务", display_order: 8, updated_at: "2024-03-03T08:50:00Z" },
+  { program_id: 9, name: "校园公告", description: "学校新闻、通知公告", url: "#", category: "工具", display_order: 9, updated_at: "2024-03-02T11:30:00Z" },
+  { program_id: 10, name: "校园导航", description: "校园地图与导航", url: "#", category: "工具", display_order: 10, updated_at: "2024-03-01T14:15:00Z" },
+  { program_id: 11, name: "活动报名", description: "校园活动在线报名", url: "#", category: "生活", display_order: 11, updated_at: "2024-02-28T09:45:00Z" },
+  { program_id: 12, name: "校车时刻", description: "校车时刻表查询", url: "#", category: "工具", display_order: 12, updated_at: "2024-02-27T16:20:00Z" }
 ]
 
 const mockUserFavorites = [1, 3, 5]
@@ -160,11 +106,11 @@ const mockUserRecentUse = [
 
 // 计算属性
 const filteredPrograms = computed(() => {
-  let programs = miniPrograms.value.filter(p => p.is_active)
+  let programs = miniPrograms.value
   
   // 按分类筛选
   if (props.activeCategory !== 'all') {
-    programs = programs.filter(p => p.category.includes(props.activeCategory))
+    programs = programs.filter(p => p.category === props.activeCategory)
   }
   
   // 按关键词搜索
@@ -173,7 +119,6 @@ const filteredPrograms = computed(() => {
     programs = programs.filter(p => 
       p.name.toLowerCase().includes(keyword) ||
       p.description.toLowerCase().includes(keyword) ||
-      (p.tags && p.tags.some(tag => tag.toLowerCase().includes(keyword))) ||
       p.category.toLowerCase().includes(keyword)
     )
   }
@@ -193,8 +138,6 @@ const filteredPrograms = computed(() => {
         if (!bRecent) return -1
         
         return new Date(bRecent.used_at) - new Date(aRecent.used_at)
-      case 'popular':
-        return b.use_count - a.use_count
       case 'display_order':
       default:
         return a.display_order - b.display_order
@@ -214,53 +157,6 @@ const loadMiniPrograms = async () => {
   loading.value = true
   
   try {
-    // ========== API调用区域开始 ==========
-    /*
-    // 实际API调用代码（注释状态）
-    // 获取小程序列表
-    const response = await fetch('/api/v1/mini-programs', {
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`
-      }
-    })
-    
-    if (response.ok) {
-      const data = await response.json()
-      if (data.code === 200) {
-        miniPrograms.value = data.data.items
-      }
-    }
-    
-    // 获取用户收藏
-    const favoritesResponse = await fetch('/api/v1/users/me/favorites', {
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`
-      }
-    })
-    
-    if (favoritesResponse.ok) {
-      const data = await favoritesResponse.json()
-      if (data.code === 200) {
-        userFavorites.value = data.data.favorites
-      }
-    }
-    
-    // 获取最近使用
-    const recentResponse = await fetch('/api/v1/users/me/recent-use', {
-      headers: {
-        'Authorization': `Bearer ${authStore.token}`
-      }
-    })
-    
-    if (recentResponse.ok) {
-      const data = await recentResponse.json()
-      if (data.code === 200) {
-        userRecentUse.value = data.data.recent_use
-      }
-    }
-    */
-    // ========== API调用区域结束 ==========
-    
     // 模拟加载延迟
     setTimeout(() => {
       miniPrograms.value = mockPrograms
@@ -289,6 +185,25 @@ const getIconColor = (programId) => {
   return colors[programId % colors.length]
 }
 
+// 与 MiniAppsModule.vue 一致的图标映射函数
+const getProgramIcon = (name) => {
+  const icons = {
+    '校园一卡通': 'fas fa-credit-card',
+    '图书馆查询': 'fas fa-book',
+    '课表查询': 'fas fa-calendar-alt',
+    '电费缴纳': 'fas fa-bolt',
+    '成绩查询': 'fas fa-chart-line',
+    '失物招领': 'fas fa-search',
+    '校园网充值': 'fas fa-wifi',
+    '教室预约': 'fas fa-door-closed',
+    '校园公告': 'fas fa-bullhorn',
+    '校园导航': 'fas fa-map-marked-alt',
+    '活动报名': 'fas fa-calendar-check',
+    '校车时刻': 'fas fa-bus-alt'
+  }
+  return icons[name] || 'fas fa-th-large'
+}
+
 const isProgramFavorited = (programId) => {
   return userFavorites.value.includes(programId)
 }
@@ -308,22 +223,6 @@ const toggleFavorite = (programId) => {
     // 添加收藏
     userFavorites.value.push(programId)
   }
-  
-  // ========== API调用区域开始 ==========
-  /*
-  // 实际API调用代码
-  fetch(`/api/v1/mini-programs/${programId}/favorite`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${authStore.token}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      favorite: !isProgramFavorited(programId)
-    })
-  })
-  */
-  // ========== API调用区域结束 ==========
   
   emit('favorite-changed', programId, index === -1)
 }
@@ -358,22 +257,13 @@ const addRecentUse = (programId) => {
   if (userRecentUse.value.length > 20) {
     userRecentUse.value = userRecentUse.value.slice(0, 20)
   }
-  
-  // ========== API调用区域开始 ==========
-  /*
-  // 实际API调用代码
-  fetch(`/api/v1/mini-programs/${programId}/record-use`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${authStore.token}`
-    }
-  })
-  */
-  // ========== API调用区域结束 ==========
 }
 
 // 事件发射
 const emit = defineEmits(['needLogin', 'open-program', 'favorite-changed'])
+
+// 需要导入 showToast 函数
+import { showToast } from '../../api/Toast'
 </script>
 
 <style scoped>

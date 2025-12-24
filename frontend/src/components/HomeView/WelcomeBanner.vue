@@ -56,7 +56,7 @@ const props = defineProps({
 
 const welcomeText = computed(() => {
   if (user.value) {
-    return `欢迎回来，${user.value}同学`
+    return `欢迎回来，${user.value.name}同学`
   }
   return '欢迎使用校园综合平台'
 })
