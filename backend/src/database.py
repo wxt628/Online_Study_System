@@ -2,7 +2,7 @@ from datetime import datetime
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, Float, Text, ForeignKey, create_engine
 from sqlalchemy.orm import sessionmaker, relationship, declarative_base
 
-DATABASE_URL = "mysql+pymysql://root:123456@localhost:3306/campus_platform?charset=utf8mb4"
+DATABASE_URL = "mysql+pymysql://thephix:123456@localhost:3306/campus_platform?charset=utf8mb4"
 Base = declarative_base()
 
 # 用户表
