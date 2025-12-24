@@ -1,4 +1,3 @@
--- drop database campus_platform;
 -- 创建数据库（如果不存在）
 CREATE DATABASE IF NOT EXISTS campus_platform DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE campus_platform;

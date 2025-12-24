@@ -97,6 +97,7 @@ def login(payload: LoginRequest):
 	finally:
 		db.close()
 
+# 更新个人信息
 @app.post("/api/v1/user/update")
 async def update_user(
 	name: str = Form(None),
@@ -182,56 +183,6 @@ def me(current_user: database.User = Depends(get_current_user)):
 		created_at=current_user.created_at.isoformat(),
 		updated_at=current_user.updated_at.isoformat(),
 	)
-
-# """修改个人信息"""
-# class UpdateRequest(BaseModel):
-# 	name: Optional[str] = None
-# 	email: Optional[str] = None
-# 	phone: Optional[str] = None
-# 	avatar_url: Optional[str] = None
-# 	old_password: Optional[str] = None
-# 	new_password: Optional[str] = None
-
-# @app.put("/api/v1/users/me")
-# def update_user_info(
-# 	payload: UpdateRequest,
-# 	current_user: database.User = Depends(get_current_user)
-# ):
-# 	db = database.SessionLocal()
-# 	try:
-# 		user = db.query(database.User).filter(database.User.user_id == current_user.user_id).first()
-# 		if payload.name:
-# 			user.name = payload.name
-# 		if payload.email:
-# 			user.email = payload.email
-# 		if payload.phone:
-# 			user.phone = payload.phone
-# 		if payload.avatar_url:
-# 			user.avatar_url = payload.avatar_url
-
-# 		if payload.old_password and payload.new_password:
-# 			if hash_password(user.salt, payload.old_password) != user.password_hash:
-# 				raise HTTPException(status_code=400, detail="旧密码错误")
-# 			user.password_hash = hash_password(user.salt, payload.new_password)
-
-# 		user.updated_at = datetime.utcnow()
-# 		db.commit()
-# 		return {
-# 			"code": 200,
-# 			"message": "更新成功",
-# 			"data": {
-# 				"user_id": current_user.user_id,
-# 				"student_id": current_user.student_id,
-# 				"name": current_user.name,
-# 				"email": current_user.email,
-# 				"phone": current_user.phone,
-# 				"avatar_url": current_user.avatar_url,
-# 				"created_at": current_user.created_at,
-# 				"updated_at": current_user.updated_at,
-# 			}
-# 		}
-# 	finally:
-# 		db.close()
 
 """获取小程序列表"""
 class MiniProgramOut(BaseModel):
@@ -372,7 +323,7 @@ class SubmissionOut(BaseModel):
 	feedback: str | None
 
 UPLOAD_DIR = "uploads/submissions"
-AVATATS_UPLOAD_DIR = "uploads/files"
+AVATATS_UPLOAD_DIR = "uploads/avatars"
 
 # Ensure any new tables (e.g., post_likes) are created
 try:
@@ -621,37 +572,7 @@ def mark_all_notifications_read(current_user: database.User = Depends(get_curren
 	finally:
 		db.close()
 
-### 文件接口 ###
-
-@app.post('/api/v1/files/upload')
-def upload_file(file: UploadFile = File(...), purpose: str | None = Form(None), related_id: int | None = Form(None), current_user: database.User = Depends(get_current_user)):
-	# Save uploaded file and return a public URL. Frontend should POST with form field `purpose` = 'avatar' or 'submission' (for submissions pass related_id=submission_id).
-	if purpose == 'avatar':
-		file_url, size, filename = storage.save_avatar(file)
-	elif purpose == 'submission':
-		if related_id is None:
-			raise HTTPException(status_code=400, detail='related_id required for submission')
-		file_url, size = storage.save_submission_file(file, related_id)
-		filename = file_url.split('/')[-1]
-	else:
-		file_url, size, filename = storage.save_file(file)
-
-	return { 'code':200, 'message':'上传成功', 'data': { 'file_url': file_url, 'file_name': filename, 'file_size': size } }
-
-
-@app.get('/api/v1/files/{file_id}')
-def get_file_info(file_id: int, current_user: database.User = Depends(get_current_user)):
-	raise HTTPException(status_code=404, detail='已移除: 文件查询接口已被删除')
-
-
-@app.get('/api/v1/files/{file_id}/download')
-def download_file(file_id: int, current_user: database.User = Depends(get_current_user)):
-	raise HTTPException(status_code=404, detail='已移除: 文件下载接口已被删除')
-
-
-@app.delete('/api/v1/files/{file_id}')
-def delete_file(file_id: int, current_user: database.User = Depends(get_current_user)):
-	raise HTTPException(status_code=404, detail='已移除: 文件删除接口已被删除')
+### 交作业 ###
 
 @app.post(
 	"/api/v1/assignments/{assignment_id}/submit",
@@ -700,5 +621,3 @@ def submit_assignment(
 		)
 	finally:
 		db.close()
-	
-	
