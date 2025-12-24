@@ -86,6 +86,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, reactive, nextTick } from 'vue'
+import api from '../api/config'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
@@ -106,10 +107,16 @@ const formData = reactive({
 authStore.init()
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const user = computed(() => authStore.user)
-const userName = computed(() => user.value || '请登录')
-const userAvatar = computed(() => 
-  user.value?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=guest'
-)
+const userName = computed(() => user.value?.name || '请登录')
+const userAvatar = computed(() => {
+  const url = user.value?.avatar_url
+  if (!url) return 'https://api.dicebear.com/7.x/avataaars/svg?seed=guest'
+  if (/^https?:\/\//i.test(url)) return url
+  const base = api.defaults.baseURL || ''
+  const root = base.replace(/\/api\/v1\/?$/, '')
+  const path = url.startsWith('/') ? url : '/' + url
+  return root + path
+})
 const toggleDropdown = () => {
   showDropdown.value = !showDropdown.value
 }
@@ -187,7 +194,7 @@ const handleLogout = async () => {
 
 const goToProfile = () => {
   showDropdown.value = false
-  alert('个人信息页面开发中...')
+  router.push('/profile')
 }
 
 const toggleMobileMenu = () => {

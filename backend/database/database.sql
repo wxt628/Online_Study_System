@@ -14,7 +14,7 @@ CREATE TABLE users (
     name                  VARCHAR(50)     NOT NULL                                                  COMMENT '姓名',
     email                 VARCHAR(100)    UNIQUE                                                    COMMENT '邮箱',
     phone                 VARCHAR(20)                                                               COMMENT '手机号',
-    avatar_url            VARCHAR(255)                                                              COMMENT '头像链接',
+    avatar_url            VARCHAR(255)    DEFAULT NULL                                              COMMENT '头像链接',
     created_at            DATETIME        DEFAULT CURRENT_TIMESTAMP                                 COMMENT '创建时间',
     updated_at            DATETIME        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP     COMMENT '更新时间'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4                                                             COMMENT='用户表';
