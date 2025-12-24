@@ -6,9 +6,9 @@ const api = axios.create({
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'
-  }
+  },
 })
-
+api.defaults.withCredentials = true; 
 // 请求拦截器 - 添加 token
 api.interceptors.request.use(
   (config) => {

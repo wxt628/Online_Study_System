@@ -88,6 +88,8 @@
 import { ref, computed, onMounted, onUnmounted, reactive, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { Me } from '../api/interface'
+import { showToast } from '../api/Toast'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -110,9 +112,11 @@ const userName = computed(() => user.value || '请登录')
 const userAvatar = computed(() => 
   user.value?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=guest'
 )
+
 const toggleDropdown = () => {
   showDropdown.value = !showDropdown.value
 }
+
 const showLogin = () => {
   showDropdown.value = false
   showModal.value = true
@@ -139,44 +143,11 @@ const handleLogin = async () => {
   if (result.success) {
     closeModal()
     router.push('/')
+    showToast('登陆成功！', 'success')
   } else {
     successLogin.value = false;
     loginMessage.value = '密码错误'
   }
-  
-//   try {
-//     loginMessage.value = '' 
-//     const response = await login({
-//       student_id: formData.studentId,
-//       password: formData.password
-//     })
-//     console.log(response)
-//     if (response.status === 200) {
-//       // 保存token和用户信息到store
-//     //   authStore.setToken(response.data.token)
-//     //   authStore.setUser(response.data.user)
-      
-//     //   // 如果勾选了“记住我”，可以保存token到localStorage
-//     //   if (formData.rememberMe) {
-//     //     localStorage.setItem('token', response.data.token)
-//     //     localStorage.setItem('user', JSON.stringify(response.data.user))
-//     //   } else {
-//     //     // 否则只保存到sessionStorage
-//     //     sessionStorage.setItem('token', response.data.token)
-//     //     sessionStorage.setItem('user', JSON.stringify(response.data.user))
-//     //   }
-      
-//       router.push('/')
-//     } else {
-//       successLogin.value = false;
-//       console.error('登录失败')
-//       loginMessage.value = response.message || '登录失败'
-//     }
-//   } catch (error) {
-//     successLogin.value = false;
-//     console.error('登录出错:', error)
-//     loginMessage.value = '登录失败，请检查网络连接'
-//   }
 }
 
 const handleLogout = async () => {
@@ -187,7 +158,9 @@ const handleLogout = async () => {
 
 const goToProfile = () => {
   showDropdown.value = false
-  alert('个人信息页面开发中...')
+  let response = Me()
+  console.log(response)
+  alert(response.student_id)
 }
 
 const toggleMobileMenu = () => {

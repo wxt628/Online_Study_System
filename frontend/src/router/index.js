@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import { useAuthStore } from '../stores/auth'
+import { showToast } from '../api/Toast'
 
 const routes = [
   {
@@ -39,6 +40,7 @@ router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
   
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    showToast('请登录！', 'error')
     next({ name: 'home' })
   } else {
     next()

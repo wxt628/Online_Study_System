@@ -68,47 +68,11 @@
       <div v-if="!loading && filteredPrograms.length === 0" class="empty-state">
         <i class="fas fa-inbox"></i>
         <p>暂无小程序</p>
-      </div>
+      </div>  
     </div>
-    
-    <!-- 小程序详情弹窗 -->
-    <div v-if="selectedProgram" class="program-modal" @click.self="closeModal">
-      <div class="program-modal-content">
-        <div class="modal-header">
-          <h3>{{ selectedProgram.name }}</h3>
-          <button class="modal-close" @click="closeModal">&times;</button>
-        </div>
-        <div class="modal-body">
-          <div class="program-detail">
-            <div class="program-icon-large" :style="{ backgroundColor: getCategoryColor(selectedProgram.category) }">
-              <i :class="getProgramIcon(selectedProgram.name)"></i>
-            </div>
-            <div class="program-info">
-              <div class="info-row">
-                <span class="label">分类：</span>
-                <span class="value">{{ selectedProgram.category }}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">描述：</span>
-                <span class="value">{{ selectedProgram.description }}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">更新时间：</span>
-                <span class="value">{{ formatDate(selectedProgram.updated_at) }}</span>
-              </div>
-            </div>
-          </div>
-          <div class="modal-actions">
-            <button class="btn btn-primary" @click="launchProgram(selectedProgram)">
-              <i class="fas fa-external-link-alt"></i> 立即使用
-            </button>
-            <button class="btn btn-secondary" @click="closeModal">
-              关闭
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+
+    <ModalShow v-model="currentProgram" />
+
   </div>
 </template>
 
@@ -116,6 +80,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
+import { showToast } from '../../api/Toast'
+import { getMiniProgram } from '../../api/interface'
+import ModalShow from '../common/ModalShow.vue'
+const currentProgram = ref(null)
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -137,7 +105,6 @@ const miniPrograms = ref([])
 const loading = ref(false)
 const searchKeyword = ref('')
 const activeCategory = ref('all')
-const selectedProgram = ref(null)
 const error = ref(null)
 
 // 模拟数据（后期替换为API调用）
@@ -153,6 +120,7 @@ const mockData = {
     { program_id: 8, name: "教室预约", icon_url: "/icons/classroom.png", description: "自习室、讨论室预约", url: "#", category: "教务", display_order: 8, updated_at: "2024-03-03T08:50:00Z" }
   ]
 }
+console.log(getMiniProgram())
 
 // 分类选项
 const categories = ref([
@@ -268,35 +236,21 @@ const getProgramIcon = (name) => {
   return icons[name] || 'fas fa-th-large'
 }
 
+const selectedProgram = ref(null)
+
+const setSelectedProgram = (program) => {
+  currentProgram.value = program
+}
+
 const openMiniProgram = (program) => {
+  
   if (!authStore.isAuthenticated) {
     // 触发登录弹窗
-    emit('needLogin')
+    showToast('请登录！', 'error')
     return
   }
   
-  selectedProgram.value = program
-}
-
-const launchProgram = (program) => {
-  // 实际跳转到小程序URL
-  // window.open(program.url, '_blank')
-  alert(`即将跳转到: ${program.name}`)
-  closeModal()
-}
-
-const closeModal = () => {
-  selectedProgram.value = null
-}
-
-const formatDate = (dateString) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  })
+  setSelectedProgram(program)
 }
 
 // 事件发射

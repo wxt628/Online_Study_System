@@ -43,6 +43,8 @@
         <h3>未找到相关小程序</h3>
         <p>请尝试其他搜索关键词或分类</p>
       </div>
+
+      <ModalShow v-model="currentProgram" />
     </div>
   </section>
 </template>
@@ -50,8 +52,11 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '../../stores/auth'
-
 const authStore = useAuthStore()
+
+import ModalShow from '../common/ModalShow.vue'
+const currentProgram = ref(null)
+
 
 // 响应式数据
 const miniPrograms = ref([])
@@ -325,9 +330,12 @@ const toggleFavorite = (programId) => {
 
 const openMiniProgram = (program) => {
   if (!authStore.isAuthenticated) {
-    emit('needLogin')
+    // 触发登录弹窗
+    showToast('请登录！', 'error')
     return
   }
+  currentProgram.value = program
+
   
   // 记录最近使用
   addRecentUse(program.program_id)

@@ -747,7 +747,7 @@ const goToFullEditor = () => {
     return
   }
   
-  router.push('/forum/create')
+
 }
 
 const focusCommentInput = () => {

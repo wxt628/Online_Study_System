@@ -43,9 +43,9 @@ const props = defineProps({
     type: Object,
     required: true,
     default: () => ({
-      miniPrograms: 0,
+      miniPrograms: 8,
       assignments: 0,
-      posts: 0
+      posts: 3
     })
   },
   welcomeDescription: {
@@ -56,7 +56,7 @@ const props = defineProps({
 
 const welcomeText = computed(() => {
   if (user.value) {
-    return `欢迎回来，${user.value.name || user.value.student_id}同学`
+    return `欢迎回来，${user.value}同学`
   }
   return '欢迎使用校园综合平台'
 })

@@ -18,18 +18,6 @@
           <i class="fas fa-times"></i>
         </button>
       </div>
-      <div class="search-tips">
-        <span>热门搜索：</span>
-        <a 
-          v-for="tag in hotSearchTags" 
-          :key="tag"
-          class="search-tag"
-          href="#"
-          @click.prevent="setSearchTag(tag)"
-        >
-          {{ tag }}
-        </a>
-      </div>
     </div>
     
     <div class="filter-container">
@@ -72,9 +60,6 @@ const searchKeyword = ref('')
 const activeCategory = ref('all')
 const activeSort = ref('display_order')
 
-// 热门搜索标签
-const hotSearchTags = ref(['一卡通', '图书馆', '课表', '成绩', '校园网', '失物招领'])
-
 // 分类选项
 const categories = ref([
   { label: '教务', value: '教务', icon: 'fas fa-graduation-cap' },
@@ -101,11 +86,6 @@ const handleSearchInput = () => {
 const clearSearch = () => {
   searchKeyword.value = ''
   emit('search', '')
-}
-
-const setSearchTag = (tag) => {
-  searchKeyword.value = tag
-  emit('search', tag)
 }
 
 const filterByCategory = (category) => {
