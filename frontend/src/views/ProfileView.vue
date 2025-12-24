@@ -167,11 +167,23 @@ const saveProfile = async () => {
       fd.append('old_password', form.value.old_password)
       fd.append('new_password', form.value.new_password)
     }
-    const resp = await updateUserProfile(fd) // backend returns { code, message, data }
+
+    // 最小修改：直接用 axios.post，带 withCredentials
+    const resp = await axios.post(
+      'http://172.31.68.181:8000/user/update',
+      fd,
+      {
+					headers: {
+						Authorization: `Bearer ${authStore.token}`  // ⚠️ 用你登录得到的 token
+					}
+      }
+    )
+
     const updated = resp.data?.data || resp.data
     if (resp.data?.code && resp.data.code !== 200) {
       throw new Error(resp.data?.message || '更新失败')
     }
+
     // update local view and global auth store
     userInfo.value = updated
     try {
@@ -180,6 +192,7 @@ const saveProfile = async () => {
     } catch (e) {
       // ignore if store not ready
     }
+
     // 清理选中的文件和敏感字段
     clearFile()
     form.value.old_password = ''
