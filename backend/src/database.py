@@ -97,6 +97,17 @@ class Post(Base):
 	user = relationship("User", back_populates="posts")
 	comments = relationship("Comment", back_populates="post")
 
+# 帖子点赞记录（可选，用于用户级别点赞/取消）
+class PostLike(Base):
+	__tablename__ = 'post_likes'
+
+	like_id = Column(Integer, primary_key=True, autoincrement=True)
+	post_id = Column(Integer, ForeignKey('posts.post_id'), nullable=False)
+	user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
+	created_at = Column(DateTime, default=datetime.utcnow)
+
+	# 关系不必双向，但可在需要时添加
+
 # 评论表
 class Comment(Base):
 	__tablename__ = 'comments'

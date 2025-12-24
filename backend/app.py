@@ -13,6 +13,7 @@ import math
 from src.security import create_access_token, get_current_user
 
 import hashlib, src.database as database
+from sqlalchemy import func
 
 
 app = FastAPI(title="Campus Platform API", version="1.0.0")
@@ -191,7 +192,7 @@ def get_mini_programs(
 			query = query.filter(database.MiniProgram.category == category)
 		items = query.all()
 		
-		return [MiniProgramOut( x.program_id, x.name, x.icon_url, x.description, x.url, x.category, x.is_active, x.display_order, x.created_at ) for x in items ],
+		return [MiniProgramOut( x.program_id, x.name, x.icon_url, x.description, x.url, x.category, x.is_active, x.display_order, x.created_at ) for x in items ]
 	finally:
 		db.close()
 
@@ -215,7 +216,7 @@ def get_courses(
 			query = query.filter(database.Course.semester == semester)
 		items = query.all()
 		
-		return [MiniProgramOut( x.course_id, x.course_code, x.name, x.teacher, x.semester ) for x in items ],
+		return [CourseOut( x.course_id, x.course_code, x.name, x.teacher, x.semester ) for x in items ]
 	finally:
 		db.close()
 
@@ -230,7 +231,7 @@ def get_course_detail(course_id: int, _: database.User = Depends(get_current_use
 				"error": { "message": "课程不存在" }
 			})
 		
-		return MiniProgramOut(
+		return CourseOut(
 			course.course_id,
 			course.course_code,
 			course.name,
@@ -281,8 +282,10 @@ def get_assignment(
 ):
 	db = database.SessionLocal()
 	try:
-		x = db.query(database.Assignment).filter(database.Assignment.course_id == assignment_id).order_by(database.Assignment.deadline).first()
+		x = db.query(database.Assignment).filter(database.Assignment.assignment_id == assignment_id).first()
 
+		if not x:
+			raise HTTPException(status_code=404, detail={"error": {"message": "作业不存在"}})
 		return AssignmentOut( x.assignment_id, x.course_id, x.title, x.description, x.attachment_url, x.deadline, x.created_at )
 	finally:
 		db.close()
@@ -298,6 +301,317 @@ class SubmissionOut(BaseModel):
 	feedback: str | None
 
 UPLOAD_DIR = "uploads/submissions"
+
+FILES_UPLOAD_DIR = "uploads/files"
+
+# Ensure any new tables (e.g., post_likes) are created
+try:
+	database.Base.metadata.create_all(bind=database.engine)
+except Exception:
+	pass
+
+### 帖子 / 评论 / 点赞 实现 ###
+
+@app.get("/api/v1/posts")
+def list_posts(
+	category: str | None = None,
+	sort_by: str | None = Query("created_at"),
+	order: str | None = Query("desc"),
+	page: int = Query(1, ge=1),
+	pageSize: int = Query(20, ge=1, le=200),
+	_: database.User = Depends(get_current_user)
+):
+	db = database.SessionLocal()
+	try:
+		q = db.query(database.Post)
+		if category:
+			q = q.filter(database.Post.category == category)
+
+		total = q.count()
+		if sort_by == 'like_count':
+			order_col = database.Post.like_count
+		elif sort_by == 'view_count':
+			order_col = database.Post.view_count
+		else:
+			order_col = database.Post.created_at
+
+		if order == 'asc':
+			q = q.order_by(asc(order_col))
+		else:
+			q = q.order_by(desc(order_col))
+
+		items = q.offset((page-1)*pageSize).limit(pageSize).all()
+
+		result_items = []
+		for p in items:
+			comment_count = db.query(func.count(database.Comment.comment_id)).filter(database.Comment.post_id == p.post_id).scalar()
+			result_items.append({
+				'post_id': p.post_id,
+				'title': p.title,
+				'content_preview': (p.content[:120] + '...') if p.content and len(p.content) > 120 else p.content,
+				'author': { 'user_id': p.user_id },
+				'category': p.category,
+				'like_count': p.like_count,
+				'view_count': p.view_count,
+				'comment_count': comment_count,
+				'created_at': p.created_at,
+			})
+
+		return { 'code': 200, 'message': '成功', 'data': { 'items': result_items, 'pagination': { 'total': total, 'page': page, 'pageSize': pageSize, 'totalPages': math.ceil(total / pageSize) } } }
+	finally:
+		db.close()
+
+
+@app.get("/api/v1/posts/{post_id}")
+def get_post(post_id: int, page: int = Query(1, ge=1), pageSize: int = Query(20, ge=1), _: database.User = Depends(get_current_user)):
+	db = database.SessionLocal()
+	try:
+		post = db.query(database.Post).filter(database.Post.post_id == post_id).first()
+		if not post:
+			raise HTTPException(status_code=404, detail={"error": {"message": "帖子不存在"}})
+
+		# increment view count
+		post.view_count = int(post.view_count) + 1
+		db.commit()
+
+		# comments pagination (top-level comments)
+		comments_q = db.query(database.Comment).filter(database.Comment.post_id == post_id, database.Comment.parent_id == None).order_by(database.Comment.created_at.desc())
+		total_comments = comments_q.count()
+		comments = comments_q.offset((page-1)*pageSize).limit(pageSize).all()
+
+		def to_comment_obj(c):
+			replies = []
+			for r in c.replies:
+				replies.append({ 'comment_id': r.comment_id, 'post_id': r.post_id, 'user_id': r.user_id, 'content': r.content, 'parent_id': r.parent_id, 'created_at': r.created_at })
+			return { 'comment_id': c.comment_id, 'post_id': c.post_id, 'user_id': c.user_id, 'content': c.content, 'parent_id': c.parent_id, 'created_at': c.created_at, 'replies': replies }
+
+		comment_items = [ to_comment_obj(c) for c in comments ]
+
+		return { 'code': 200, 'message': '成功', 'data': { 'post': { 'post_id': post.post_id, 'title': post.title, 'content': post.content, 'user_id': post.user_id, 'category': post.category, 'like_count': post.like_count, 'view_count': post.view_count, 'created_at': post.created_at, 'updated_at': post.updated_at }, 'comments': { 'items': comment_items, 'pagination': { 'total': total_comments, 'page': page, 'pageSize': pageSize, 'totalPages': math.ceil(total_comments / pageSize) } } } }
+	finally:
+		db.close()
+
+
+@app.post("/api/v1/posts")
+def create_post(title: str = Form(...), content: str = Form(...), category: str | None = Form(None), current_user: database.User = Depends(get_current_user)):
+	db = database.SessionLocal()
+	try:
+		p = database.Post(user_id=current_user.user_id, title=title, content=content, category=(category or '校园'))
+		db.add(p)
+		db.commit()
+		db.refresh(p)
+		return { 'code': 200, 'message': '帖子发布成功', 'data': { 'post_id': p.post_id, 'user_id': p.user_id, 'title': p.title, 'content': p.content, 'category': p.category, 'like_count': p.like_count, 'view_count': p.view_count, 'created_at': p.created_at } }
+	finally:
+		db.close()
+
+
+@app.put("/api/v1/posts/{post_id}")
+def edit_post(post_id: int, title: str | None = Form(None), content: str | None = Form(None), category: str | None = Form(None), current_user: database.User = Depends(get_current_user)):
+	db = database.SessionLocal()
+	try:
+		post = db.query(database.Post).filter(database.Post.post_id == post_id).first()
+		if not post:
+			raise HTTPException(status_code=404, detail="帖子不存在")
+		if post.user_id != current_user.user_id:
+			raise HTTPException(status_code=403, detail="没有权限")
+		if title:
+			post.title = title
+		if content:
+			post.content = content
+		if category:
+			post.category = category
+		post.updated_at = datetime.utcnow()
+		db.commit()
+		return { 'code': 200, 'message': '更新成功', 'data': { 'post_id': post.post_id } }
+	finally:
+		db.close()
+
+
+@app.delete("/api/v1/posts/{post_id}")
+def delete_post(post_id: int, current_user: database.User = Depends(get_current_user)):
+	db = database.SessionLocal()
+	try:
+		post = db.query(database.Post).filter(database.Post.post_id == post_id).first()
+		if not post:
+			raise HTTPException(status_code=404, detail="帖子不存在")
+		if post.user_id != current_user.user_id:
+			raise HTTPException(status_code=403, detail="没有权限")
+		db.delete(post)
+		db.commit()
+		return { 'code': 200, 'message': '删除成功', 'data': None }
+	finally:
+		db.close()
+
+
+@app.post("/api/v1/posts/{post_id}/comments")
+def create_comment(post_id: int, content: str = Form(...), parent_id: int | None = Form(None), current_user: database.User = Depends(get_current_user)):
+	db = database.SessionLocal()
+	try:
+		post = db.query(database.Post).filter(database.Post.post_id == post_id).first()
+		if not post:
+			raise HTTPException(status_code=404, detail="帖子不存在")
+		c = database.Comment(post_id=post_id, user_id=current_user.user_id, content=content, parent_id=parent_id)
+		db.add(c)
+		db.commit()
+		db.refresh(c)
+		return { 'code': 200, 'message': '评论发表成功', 'data': { 'comment_id': c.comment_id, 'post_id': c.post_id, 'user_id': c.user_id, 'content': c.content, 'parent_id': c.parent_id, 'created_at': c.created_at } }
+	finally:
+		db.close()
+
+
+@app.delete("/api/v1/comments/{comment_id}")
+def delete_comment(comment_id: int, current_user: database.User = Depends(get_current_user)):
+	db = database.SessionLocal()
+	try:
+		c = db.query(database.Comment).filter(database.Comment.comment_id == comment_id).first()
+		if not c:
+			raise HTTPException(status_code=404, detail="评论不存在")
+		if c.user_id != current_user.user_id:
+			raise HTTPException(status_code=403, detail="没有权限")
+		db.delete(c)
+		db.commit()
+		return { 'code': 200, 'message': '删除成功', 'data': None }
+	finally:
+		db.close()
+
+
+@app.post("/api/v1/posts/{post_id}/like")
+def toggle_like(post_id: int, current_user: database.User = Depends(get_current_user)):
+	db = database.SessionLocal()
+	try:
+		post = db.query(database.Post).filter(database.Post.post_id == post_id).first()
+		if not post:
+			raise HTTPException(status_code=404, detail="帖子不存在")
+
+		# 使用 post_likes 表切换点赞
+		existing = None
+		try:
+			existing = db.query(database.PostLike).filter(database.PostLike.post_id == post_id, database.PostLike.user_id == current_user.user_id).first()
+		except Exception:
+			existing = None
+
+		if existing:
+			db.delete(existing)
+			post.like_count = max(0, int(post.like_count) - 1)
+			db.commit()
+			return { 'code': 200, 'message': '取消点赞', 'data': { 'post_id': post_id, 'like_count': post.like_count, 'is_liked': False } }
+		else:
+			try:
+				like = database.PostLike(post_id=post_id, user_id=current_user.user_id)
+				db.add(like)
+				post.like_count = int(post.like_count) + 1
+				db.commit()
+			except Exception:
+				db.rollback()
+				raise
+			return { 'code': 200, 'message': '点赞成功', 'data': { 'post_id': post_id, 'like_count': post.like_count, 'is_liked': True } }
+	finally:
+		db.close()
+
+### 通知接口 ###
+
+@app.get('/api/v1/notifications')
+def list_notifications(page: int = Query(1, ge=1), pageSize: int = Query(20, ge=1), is_read: bool | None = None, current_user: database.User = Depends(get_current_user)):
+	db = database.SessionLocal()
+	try:
+		q = db.query(database.Notification).filter(database.Notification.user_id == current_user.user_id)
+		if is_read is not None:
+			q = q.filter(database.Notification.is_read == is_read)
+		total = q.count()
+		items = q.order_by(database.Notification.created_at.desc()).offset((page-1)*pageSize).limit(pageSize).all()
+		result = []
+		for n in items:
+			result.append({ 'notification_id': n.notification_id, 'user_id': n.user_id, 'title': n.title, 'content': n.content, 'type': n.type, 'is_read': n.is_read, 'related_url': n.related_url, 'created_at': n.created_at })
+		return { 'code':200, 'message':'成功', 'data': { 'items': result, 'pagination': { 'total': total, 'page': page, 'pageSize': pageSize, 'totalPages': math.ceil(total / pageSize) } } }
+	finally:
+		db.close()
+
+
+@app.put('/api/v1/notifications/{notification_id}/read')
+def mark_notification_read(notification_id: int, current_user: database.User = Depends(get_current_user)):
+	db = database.SessionLocal()
+	try:
+		n = db.query(database.Notification).filter(database.Notification.notification_id == notification_id, database.Notification.user_id == current_user.user_id).first()
+		if not n:
+			raise HTTPException(status_code=404, detail='通知不存在')
+		n.is_read = True
+		db.commit()
+		return { 'code':200, 'message':'已标记为已读', 'data': { 'notification_id': n.notification_id, 'is_read': True } }
+	finally:
+		db.close()
+
+
+@app.put('/api/v1/notifications/read-all')
+def mark_all_notifications_read(current_user: database.User = Depends(get_current_user)):
+	db = database.SessionLocal()
+	try:
+		db.query(database.Notification).filter(database.Notification.user_id == current_user.user_id, database.Notification.is_read == False).update({ 'is_read': True })
+		db.commit()
+		return { 'code':200, 'message':'全部已读', 'data': None }
+	finally:
+		db.close()
+
+### 文件接口 ###
+
+@app.post('/api/v1/files/upload')
+def upload_file(file: UploadFile = File(...), purpose: str | None = Form(None), related_id: int | None = Form(None), current_user: database.User = Depends(get_current_user)):
+	db = database.SessionLocal()
+	try:
+		os.makedirs(FILES_UPLOAD_DIR, exist_ok=True)
+		filename = f"{int(datetime.utcnow().timestamp())}_{file.filename}"
+		path = f"{FILES_UPLOAD_DIR}/{filename}"
+		with open(path, 'wb') as f:
+			shutil.copyfileobj(file.file, f)
+		file_url = f"/uploads/files/{filename}"
+		rec = database.File(user_id=current_user.user_id, file_name=file.filename, file_url=file_url, file_size=0, mime_type=file.content_type)
+		db.add(rec)
+		db.commit()
+		db.refresh(rec)
+		return { 'code':200, 'message':'上传成功', 'data': { 'file_id': rec.file_id, 'file_name': rec.file_name, 'file_url': rec.file_url, 'file_size': rec.file_size, 'mime_type': rec.mime_type, 'user_id': rec.user_id, 'created_at': rec.created_at } }
+	finally:
+		db.close()
+
+
+@app.get('/api/v1/files/{file_id}')
+def get_file_info(file_id: int, current_user: database.User = Depends(get_current_user)):
+	db = database.SessionLocal()
+	try:
+		f = db.query(database.File).filter(database.File.file_id == file_id).first()
+		if not f:
+			raise HTTPException(status_code=404, detail='文件不存在')
+		return { 'code':200, 'message':'成功', 'data': { 'file_id': f.file_id, 'file_name': f.file_name, 'file_url': f.file_url, 'file_size': f.file_size, 'mime_type': f.mime_type, 'user_id': f.user_id, 'created_at': f.created_at } }
+	finally:
+		db.close()
+
+
+@app.get('/api/v1/files/{file_id}/download')
+def download_file(file_id: int, current_user: database.User = Depends(get_current_user)):
+	db = database.SessionLocal()
+	try:
+		f = db.query(database.File).filter(database.File.file_id == file_id).first()
+		if not f:
+			raise HTTPException(status_code=404, detail='文件不存在')
+		# 本实现简单返回文件路径（生产环境请使用安全的文件服务或临时签名 URL）
+		return { 'code':200, 'message':'成功', 'data': { 'file_url': f.file_url } }
+	finally:
+		db.close()
+
+
+@app.delete('/api/v1/files/{file_id}')
+def delete_file(file_id: int, current_user: database.User = Depends(get_current_user)):
+	db = database.SessionLocal()
+	try:
+		f = db.query(database.File).filter(database.File.file_id == file_id).first()
+		if not f:
+			raise HTTPException(status_code=404, detail='文件不存在')
+		if f.user_id != current_user.user_id:
+			raise HTTPException(status_code=403, detail='没有权限')
+		db.delete(f)
+		db.commit()
+		return { 'code':200, 'message':'删除成功', 'data': None }
+	finally:
+		db.close()
+
 
 @app.post(
 	"/api/v1/assignments/{assignment_id}/submit",
@@ -352,3 +666,5 @@ def submit_assignment(
 		)
 	finally:
 		db.close()
+	
+	
