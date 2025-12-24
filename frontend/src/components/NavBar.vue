@@ -150,8 +150,8 @@ const handleLogin = async () => {
   })
   if (result.success) {
     closeModal()
-    router.push('/')
     showToast('登陆成功！', 'success')
+    setTimeout(() => { window.location.reload(false) }, 1000)
   } else {
     successLogin.value = false;
     loginMessage.value = '密码错误'
@@ -161,7 +161,8 @@ const handleLogin = async () => {
 const handleLogout = async () => {
   showDropdown.value = false
   await authStore.logout()
-  router.push('/')
+  showToast('注销成功！', 'success')
+  setTimeout(() => { window.location.reload(false) }, 1000)
 }
 
 const goToProfile = () => {
