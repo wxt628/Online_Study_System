@@ -120,7 +120,6 @@ async def update_user(
 		if phone:
 			user.phone = phone
 
-		print(avatar)
 		if avatar is not None:
 			# delete previous avatar file first if present
 			if user.avatar_url:
@@ -135,14 +134,12 @@ async def update_user(
 			# store a URL path that the frontend can access directly (e.g. via static server)
 			user.avatar_url = file_url
 		elif avatar_url:
-			print("nmsl")
 			# frontend may pass an already-uploaded file URL instead of file
 			user.avatar_url = avatar_url
 
 		user.updated_at = datetime.utcnow()
 		db.commit()
 
-		print(user.avatar_url)
 		return {
 			"code": 200,
 			"message": "更新成功",
@@ -170,9 +167,9 @@ class UserInfomation(BaseModel):
 	user_id: str
 	student_id: str
 	name: str
-	email: str
-	phone: str
-	avatar_url: str
+	email: Optional[str]
+	phone: Optional[str]
+	avatar_url: Optional[str]
 	created_at: str
 	updated_at: str
 
@@ -737,6 +734,3 @@ def submit_assignment(
 		)
 	finally:
 		db.close()
-
-x = hash_password("82ae6c4a65aaa3319b9e883c3f3c01135c6e13d2b620eaa981d8c978d3ecc9de", "2023114514")
-print(x)

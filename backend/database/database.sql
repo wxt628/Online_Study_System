@@ -23,13 +23,14 @@ CREATE INDEX idx_student_id ON users(student_id);
 CREATE INDEX idx_email ON users(email);
 
 -- 测试
-INSERT INTO users (student_id, salt, password_hash, name, email, created_at, updated_at)
+INSERT INTO users (student_id, salt, password_hash, name, email, phone, created_at, updated_at)
 VALUES (
     '2023114514', 
-    '82ae6c4a65aaa3319b9e883c3f3c01135c6e13d2b620eaa981d8c978d3ecc9de', 
-    'e2ee7a02863266368937542d5c51a2de1e3c1bb3ec6d8dfed2c9da478b8f5ce2', 
+    'asdfghjkl', 
+    '9673a6a354baccfd04a0ac740c9c8471e61fce6252a330e6cc921347cb08400f', 
     '张三', 
-    '2023114514@szu.edu.cn', 
+    '2023114514@szu.edu.cn',
+		"19198101145",
     NOW(), 
     NOW()
 );
