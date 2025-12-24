@@ -8,17 +8,6 @@
             <span class="logo-icon">🏫</span>
             <span class="logo-text">校园论坛</span>
           </div>
-          
-          <div class="search-box">
-            <span class="search-icon">🔍</span>
-            <input
-              v-model="searchQuery"
-              type="search"
-              placeholder="搜索帖子..."
-              class="search-input"
-              @keyup.enter="searchPosts"
-            />
-          </div>
         </div>
 
         <div class="header-right">
@@ -28,13 +17,6 @@
           </button>
           
           <div class="notification-wrapper">
-            <button class="btn-icon-btn" @click="showNotifications = !showNotifications">
-              <span class="notification-icon">🔔</span>
-              <span v-if="unreadCount > 0" class="notification-badge">
-                {{ unreadCount > 99 ? '99+' : unreadCount }}
-              </span>
-            </button>
-            
             <div v-if="showNotifications" class="notification-dropdown" v-click-outside="() => showNotifications = false">
               <div class="notification-header">
                 <h3>通知</h3>
@@ -150,7 +132,7 @@
                 <div class="comment-content">
                   <div class="comment-header">
                     <div>
-                      <span class="comment-author">用户 {{ comment.user_id }}</span>
+                      <span class="comment-author"> {{ comment.name }}</span>
                       <span class="comment-time">{{ formatDate(comment.created_at) }}</span>
                     </div>
                     <button
@@ -202,7 +184,7 @@
                       <div class="reply-content">
                         <div class="reply-header">
                           <div>
-                            <span class="reply-author">用户 {{ reply.user_id }}</span>
+                            <span class="reply-author">{{ reply.name }}</span>
                             <span class="reply-time">{{ formatDate(reply.created_at) }}</span>
                           </div>
                           <button
@@ -244,21 +226,6 @@
               >
                 <span class="category-icon">{{ cat.icon }}</span>
                 {{ cat.label }}
-              </button>
-            </div>
-          </div>
-          
-          <!-- 热门标签 -->
-          <div class="sidebar-card">
-            <h3 class="sidebar-title">热门标签</h3>
-            <div class="tag-list">
-              <button
-                v-for="tag in hotTags"
-                :key="tag"
-                @click="searchTag(tag)"
-                class="tag-btn"
-              >
-                #{{ tag }}
               </button>
             </div>
           </div>
@@ -344,7 +311,7 @@
                   <div class="post-stats">
                     <span class="post-stat">
                       <span class="stat-icon">👤</span>
-                      用户 {{ post.author?.user_id }}
+                      {{ post.author?.name }}
                     </span>
                     <span class="post-stat">
                       <span class="stat-icon">❤️</span>
@@ -571,20 +538,12 @@
 import { ref, onMounted, computed } from 'vue'
 import api from '../api/config'
 
-// ... 保持原有的 JavaScript 逻辑不变 ...
-// 以下是相同的 JavaScript 代码，只是去掉了 Tailwind 相关的图标导入
+// 创建图标组件（使用文本图标代替）
+const createIcon = (icon) => ({
+  template: `<span>${icon}</span>`
+})
 
-// 使用文本图标代替
-const categories = ref([
-  { value: null, label: '全部', icon: '≡' },
-  { value: '教务', label: '教务', icon: '🎓' },
-  { value: '生活', label: '生活', icon: '🏠' },
-  { value: '工具', label: '工具', icon: '🔧' },
-  { value: '健康', label: '健康', icon: '❤️' },
-  { value: '娱乐', label: '娱乐', icon: '🎮' }
-])
-
-// 保持其他所有逻辑不变...
+// 状态变量
 const posts = ref([])
 const selectedPost = ref(null)
 const comments = ref({ items: [], pagination: {} })
@@ -598,52 +557,28 @@ const showNotifications = ref(false)
 const commentContent = ref('')
 const replyContent = ref('')
 const replyTo = ref(null)
-const searchQuery = ref('')
 const currentView = ref('list')
-const currentUserId = ref(1)
+const currentUserId = ref(1) // 应该从登录状态获取
 
+// 发帖表单
 const newPost = ref({
   title: '',
   category: '教务',
   content: ''
 })
 
-const hotTags = ref(['一卡通', '图书馆', '课表', '成绩', '校园网', '失物招领'])
+const categories = ref([
+  { value: null, label: '全部', icon: '≡' },
+  { value: '教务', label: '教务', icon: '🎓' },
+  { value: '生活', label: '生活', icon: '🏠' },
+  { value: '工具', label: '工具', icon: '🔧' },
+  { value: '健康', label: '健康', icon: '❤️' },
+  { value: '娱乐', label: '娱乐', icon: '🎮' }
+])
 
-// 保持所有 computed, methods, lifecycle hooks 不变...
 const unreadCount = computed(() => (notifications.value ?? []).filter(n => !n.is_read).length)
 
-const visiblePages = computed(() => {
-  const total = pagination.value.totalPages
-  const current = pagination.value.page
-  const pages = []
-  
-  if (total <= 7) {
-    for (let i = 1; i <= total; i++) pages.push(i)
-  } else {
-    if (current <= 4) {
-      for (let i = 1; i <= 5; i++) pages.push(i)
-      pages.push('...')
-      pages.push(total)
-    } else if (current >= total - 3) {
-      pages.push(1)
-      pages.push('...')
-      for (let i = total - 4; i <= total; i++) pages.push(i)
-    } else {
-      pages.push(1)
-      pages.push('...')
-      pages.push(current - 1)
-      pages.push(current)
-      pages.push(current + 1)
-      pages.push('...')
-      pages.push(total)
-    }
-  }
-  
-  return pages.filter(page => page !== '...')
-})
-
-// 保持所有方法不变...
+// 修复的 API 调用方法
 const loadPosts = async () => {
   loading.value = true
   try {
@@ -676,8 +611,10 @@ const loadPosts = async () => {
 const loadPostDetail = async (postId) => {
   try {
     const { data } = await api.get(`/posts/${postId}`)
-    selectedPost.value = data
-    loadComments(postId)
+    selectedPost.value = data.data?.post
+    if (selectedPost.value) {
+      loadComments(postId)
+    }
   } catch (error) {
     console.error('Failed to load post detail:', error)
     console.log('加载帖子详情失败')
@@ -686,13 +623,25 @@ const loadPostDetail = async (postId) => {
 
 const loadComments = async (postId) => {
   try {
-    const { data } = await api.get(`/posts/${postId}/comments/`)
-    comments.value = {
-      items: data.items ?? [],
-      pagination: data.pagination ?? {}
+    // 根据后端代码，评论是包含在帖子详情接口中的
+    const { data } = await api.get(`/posts/${postId}`, {
+      params: {
+        page: 1,
+        pageSize: 20
+      }
+    })
+    
+    if (data.code === 200 && data.data) {
+      comments.value = {
+        items: data.data.comments?.items ?? [],
+        pagination: data.data.comments?.pagination ?? {}
+      }
+    } else {
+      comments.value = { items: [], pagination: {} }
     }
   } catch (error) {
     console.error('Failed to load comments:', error)
+    comments.value = { items: [], pagination: {} }
   }
 }
 
@@ -719,59 +668,93 @@ const loadNotifications = async () => {
   }
 }
 
+// 关键修复：创建帖子方法
 const createPost = async () => {
   if (!newPost.value.title.trim() || !newPost.value.content.trim()) {
-    console.log('请填写完整的帖子信息')
+    console('请填写完整的帖子信息')
     return
   }
 
   try {
-    await api.post('/posts/', {
-      title: newPost.value.title,
-      category: newPost.value.category,
-      content: newPost.value.content
-    })
+    // 使用 FormData 格式发送数据
+    const formData = new FormData()
+    formData.append('title', newPost.value.title)
+    formData.append('content', newPost.value.content)
+    if (newPost.value.category) {
+      formData.append('category', newPost.value.category)
+    }
+
+    // 确保使用正确的路径（没有结尾的斜杠）
+    const response = await api.post('/posts', formData, {})
     
-    showCreatePost.value = false
-    newPost.value = { title: '', category: '教务', content: '' }
-    loadPosts()
-    console.log('发布成功！')
+    if (response.data.code === 200) {
+      showCreatePost.value = false
+      newPost.value = { title: '', category: '教务', content: '' }
+      loadPosts()
+      console.log('发布成功！')
+    } else {
+      console.log('发布失败:', response.data.message)
+    }
   } catch (error) {
     console.error('Failed to create post:', error)
+    if (error.response) {
+      console.log('错误详情:', error.response.data)
+    }
     console.log('发布失败，请重试')
   }
 }
 
 const createComment = async () => {
-  if (!commentContent.value.trim()) return
+  if (!commentContent.value.trim() || !selectedPost.value) return
 
   try {
-    await api.post(`/posts/${selectedPost.value.post_id}/comments/`, {
-      content: commentContent.value
-    })
+    const formData = new FormData()
+    formData.append('content', commentContent.value)
     
-    commentContent.value = ''
-    loadComments(selectedPost.value.post_id)
+    // 正确的接口路径应该是：/posts/{post_id}/comments
+    const response = await api.post(`/posts/${selectedPost.value.post_id}/comments`, formData, {})
+    
+    if (response.data.code === 200) {
+      commentContent.value = ''
+      // 重新加载评论
+      await loadComments(selectedPost.value.post_id)
+      console.log('评论发表成功！')
+    } else {
+      console.log('评论失败:', response.data.message)
+    }
   } catch (error) {
     console.error('Failed to create comment:', error)
+    if (error.response) {
+      console.log('错误详情:', error.response.data)
+    }
     console.log('评论失败，请重试')
   }
 }
 
 const createReply = async (parentId) => {
-  if (!replyContent.value.trim()) return
+  if (!replyContent.value.trim() || !selectedPost.value) return
 
   try {
-    await api.post(`/posts/${selectedPost.value.post_id}/comments/`, {
-      content: replyContent.value,
-      parent_id: parentId
-    })
+    const formData = new FormData()
+    formData.append('content', replyContent.value)
+    formData.append('parent_id', parentId.toString()) // 添加 parent_id 表示这是回复
+
+    const response = await api.post(`/posts/${selectedPost.value.post_id}/comments`, formData, {})
     
-    replyContent.value = ''
-    replyTo.value = null
-    loadComments(selectedPost.value.post_id)
+    if (response.data.code === 200) {
+      replyContent.value = ''
+      replyTo.value = null
+      // 刷新帖子详情（包含评论）
+      await loadPostDetail(selectedPost.value.post_id)
+      console.log('回复成功！')
+    } else {
+      console.log('回复失败:', response.data.message)
+    }
   } catch (error) {
     console.error('Failed to create reply:', error)
+    if (error.response) {
+      console.log('错误详情:', error.response.data)
+    }
     console.log('回复失败，请重试')
   }
 }
@@ -780,15 +763,21 @@ const toggleLike = async (postId) => {
   try {
     const { data } = await api.post(`/posts/${postId}/like`)
     
-    if (selectedPost.value && selectedPost.value.post_id === postId) {
-      selectedPost.value.is_liked = data.is_liked
-      selectedPost.value.like_count = data.like_count
-    }
-    
-    const post = posts.value.find(p => p.post_id === postId)
-    if (post) {
-      post.is_liked = data.is_liked
-      post.like_count = data.like_count
+    if (data.code === 200 && data.data) {
+      const likeData = data.data
+      
+      // 更新选中帖子的点赞状态
+      if (selectedPost.value && selectedPost.value.post_id === postId) {
+        selectedPost.value.is_liked = likeData.is_liked
+        selectedPost.value.like_count = likeData.like_count
+      }
+      
+      // 更新帖子列表中的点赞状态
+      const post = posts.value.find(p => p.post_id === postId)
+      if (post) {
+        post.is_liked = likeData.is_liked
+        post.like_count = likeData.like_count
+      }
     }
   } catch (error) {
     console.error('Failed to toggle like:', error)
@@ -798,11 +787,13 @@ const toggleLike = async (postId) => {
 
 const markRead = async (notificationId) => {
   try {
-    await api.post(`/notifications/${notificationId}/read`)
+    const { data } = await api.put(`/notifications/${notificationId}/read`)
     
-    const notification = notifications.value.find(n => n.notification_id === notificationId)
-    if (notification) {
-      notification.is_read = true
+    if (data.code === 200) {
+      const notification = notifications.value.find(n => n.notification_id === notificationId)
+      if (notification) {
+        notification.is_read = true
+      }
     }
   } catch (error) {
     console.error('Failed to mark notification as read:', error)
@@ -811,10 +802,12 @@ const markRead = async (notificationId) => {
 
 const markAllRead = async () => {
   try {
-    await api.post('/notifications/read-all')
+    const { data } = await api.put('/notifications/read-all')
     
-    notifications.value.forEach(n => n.is_read = true)
-    showNotifications.value = false
+    if (data.code === 200) {
+      notifications.value.forEach(n => n.is_read = true)
+      showNotifications.value = false
+    }
   } catch (error) {
     console.error('Failed to mark all notifications as read:', error)
     console.log('操作失败，请重试')
@@ -834,6 +827,7 @@ const changePage = (page) => {
 }
 
 const formatDate = (dateString) => {
+  if (!dateString) return ''
   const date = new Date(dateString)
   const now = new Date()
   const diff = now - date
@@ -846,25 +840,46 @@ const formatDate = (dateString) => {
   return date.toLocaleDateString('zh-CN')
 }
 
-const searchPosts = () => {
-  if (searchQuery.value.trim()) {
-    console.log('搜索:', searchQuery.value)
-    loadPosts()
+const visiblePages = computed(() => {
+  const total = pagination.value.totalPages
+  const current = pagination.value.page
+  const pages = []
+  
+  if (total <= 7) {
+    for (let i = 1; i <= total; i++) pages.push(i)
+  } else {
+    if (current <= 4) {
+      for (let i = 1; i <= 5; i++) pages.push(i)
+      pages.push('...')
+      pages.push(total)
+    } else if (current >= total - 3) {
+      pages.push(1)
+      pages.push('...')
+      for (let i = total - 4; i <= total; i++) pages.push(i)
+    } else {
+      pages.push(1)
+      pages.push('...')
+      pages.push(current - 1)
+      pages.push(current)
+      pages.push(current + 1)
+      pages.push('...')
+      pages.push(total)
+    }
   }
-}
-
-const searchTag = (tag) => {
-  searchQuery.value = tag
-  searchPosts()
-}
+  
+  return pages.filter(page => page !== '...')
+})
 
 const deleteComment = async (commentId) => {
   if (!confirm('确定要删除这条评论吗？')) return
   
   try {
-    await api.delete(`/comments/${commentId}`)
-    if (selectedPost.value) {
-      loadComments(selectedPost.value.post_id)
+    const { data } = await api.delete(`/comments/${commentId}`)
+    
+    if (data.code === 200 && selectedPost.value) {
+      await loadPostDetail(selectedPost.value.post_id)
+    } else {
+      console.log('删除失败:', data.message)
     }
   } catch (error) {
     console.error('Failed to delete comment:', error)
