@@ -688,6 +688,8 @@ onMounted(() => {
 </script>
 
 <style scoped>
+	body{background: black;}
+
 .line-clamp-2 {
   display: -webkit-box;
   line-clamp: 2;
