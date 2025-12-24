@@ -22,12 +22,12 @@ const routes = [
     component: () => import('../views/ProfileView.vue'),
     meta: { requiresAuth: true }
   },
-//   {
-//     path: '/homework',
-//     name: 'homework',
-//     component: () => import('../views/HomeworkView.vue'),
-//     meta: { requiresAuth: true }
-//   },
+  {
+    path: '/homework',
+    name: 'homework',
+    component: () => import('../views/HomeworkView.vue'),
+    meta: { requiresAuth: true }
+  },
 //   {
 //     path: '/forum',
 //     name: 'forum',
