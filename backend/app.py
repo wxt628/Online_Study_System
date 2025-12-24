@@ -2,7 +2,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from fastapi import Depends, Header, FastAPI, Query, HTTPException, UploadFile, File, Form, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from datetime import datetime, timedelta
 from pydantic import BaseModel
 from sqlalchemy import create_engine, Column, Integer, String, Float, Text, Enum, ForeignKey, DECIMAL, and_, or_, asc, desc
@@ -160,3 +159,157 @@ def update_user_info(
 		}
 	finally:
 		db.close()
+
+"""获取小程序列表"""
+class MiniProgramOut(BaseModel):
+	program_id: int
+	name: str
+	icon_url: str
+	description: str
+	url: str
+	category: str
+	is_active: bool
+	display_order: int
+	created_at: str
+
+class MiniProgramList(BaseModel):
+	mini_programs_list: list[MiniProgramOut]
+	page: int
+	page_size: int
+	page_count: int
+
+@app.get("/api/v1/mini-programs", response_model=MiniProgramList)
+def get_mini_programs(
+	category: str | None = None,
+	page: int = 1,
+	page_size: int = 20,
+	_: database.User = Depends(get_current_user)
+):
+	db = database.SessionLocal()
+	try:
+		query = db.query(database.MiniProgram)
+		if category:
+			query = query.filter(database.MiniProgram.category == category)
+		
+		total = query.count()
+		items = query.offset((page - 1) * page_size).limit(page_size).all()
+		
+		return MiniProgramList(
+			[
+				MiniProgramOut(
+					x.program_id,
+					x.name,
+					x.icon_url,
+					x.description,
+					x.url,
+					x.category,
+					x.is_active,
+					x.display_order,
+					x.created_at
+				) for x in items
+			],
+			page,
+			page_size,
+			(total + page_size - 1) // page_size
+		)
+	finally:
+		db.close()
+
+"""获取当前课程列表"""
+class CourseOut(BaseModel):
+	course_id: int
+	course_code: str
+	name: str
+	teacher: str
+	semester: str
+
+class CourseSchedule(BaseModel):
+	courses: list[CourseOut]
+	page: int
+	page_size: int
+	page_count: int
+
+@app.get("/api/v1/courses", response_model=CourseSchedule)
+def get_courses(
+	semester: str | None = None,
+	page: int = 1,
+	page_size: int = 20,
+	_: database.User = Depends(get_current_user)
+):
+	db = database.SessionLocal()
+	try:
+		query = db.query(database.Course)
+		if semester:
+			query = query.filter(database.Course.semester == semester)
+		
+		total = query.count()
+		items = query.offset((page - 1) * page_size).limit(page_size).all()
+		
+		return MiniProgramList(
+			[
+				MiniProgramOut(
+					x.course_id,
+					x.course_code,
+					x.name,
+					x.teacher,
+					x.semester,
+				) for x in items
+			],
+			page,
+			page_size,
+			(total + page_size - 1) // page_size
+		)
+	finally:
+		db.close()
+
+"""获取课程详细信息"""
+@app.get("/api/v1/courses/{course_id}", response_model=CourseOut)
+def get_course_detail(course_id: int, _: database.User = Depends(get_current_user)):
+	db = database.SessionLocal()
+	try:
+		course = db.query(database.Course).filter(database.Course.course_id == course_id).first()
+		if not course:
+			raise HTTPException(status_code=401, detail={
+				"error": { "message": "课程不存在" }
+			})
+		
+		return MiniProgramOut(
+			course.course_id,
+			course.course_code,
+			course.name,
+			course.teacher,
+			course.semester,
+		)
+	finally:
+		db.close()
+
+"""获取课程作业列表"""
+class AssignmentOut:
+	assignment_id: int
+	course_id: int
+	title: str
+	description: str
+	attachment_url: str
+	deadline: str
+	created_at: str
+
+@app.get("/api/v1/courses/{course_id}/assignments", response_model=AssignmentOut)
+def get_course_detail(course_id: int, _: database.User = Depends(get_current_user)):
+	db = database.SessionLocal()
+	try:
+		course = db.query(database.Course).filter(database.Course.course_id == course_id).first()
+		if not course:
+			raise HTTPException(status_code=401, detail={
+				"error": { "message": "课程不存在" }
+			})
+		
+		return MiniProgramOut(
+			course.course_id,
+			course.course_code,
+			course.name,
+			course.teacher,
+			course.semester,
+		)
+	finally:
+		db.close()
+	
