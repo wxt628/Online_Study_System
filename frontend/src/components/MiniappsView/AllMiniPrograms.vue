@@ -109,7 +109,7 @@ const mockPrograms = [
     display_order: 2,
     use_count: 8945,
     rating: 4.7,
-    last_updated: "2024-11-25T14:30:00",
+    last_updated: "2024-11-25T 14:30:00",
     is_active: true,
     is_official: true,
     url: "https://library-booking.example.com",

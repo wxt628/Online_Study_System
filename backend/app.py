@@ -2,6 +2,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from fastapi import Depends, Header, FastAPI, Query, HTTPException, UploadFile, File, Form, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from datetime import datetime, timedelta
 from pydantic import BaseModel
 from sqlalchemy import create_engine, Column, Integer, String, Float, Text, Enum, ForeignKey, DECIMAL, and_, or_, asc, desc
@@ -19,11 +20,15 @@ import src.storage as storage
 app = FastAPI(title="Campus Platform API", version="1.0.0")
 app.add_middleware(
 	CORSMiddleware,
-	allow_origins=["http://127.0.0.1:5500", "http://localhost:5500", "http://localhost:5173"],
-	allow_credentials=True,
+	allow_origins=["http://localhost:5173"],
+	allow_credentials=True,                 
 	allow_methods=["*"],
-	allow_headers=["*"]
+	allow_headers=["*"],
 )
+
+
+# Serve uploaded files in development: expose /uploads/... paths
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 @app.get("/")
 def test():
@@ -92,6 +97,69 @@ def login(payload: LoginRequest):
 	finally:
 		db.close()
 
+# 更新个人信息
+@app.post("/api/v1/user/update")
+async def update_user(
+	name: str = Form(None),
+	email: str = Form(None),
+	phone: str = Form(None),
+	avatar: UploadFile | None = File(None),
+	avatar_url: str | None = Form(None),
+	current_user: database.User = Depends(get_current_user)
+):
+	db = database.SessionLocal()
+	try:
+		user = db.query(database.User).filter(database.User.user_id == current_user.user_id).first()
+		if not user:
+			raise HTTPException(status_code=404, detail="用户不存在")
+
+		if name:
+			user.name = name
+		if email:
+			user.email = email
+		if phone:
+			user.phone = phone
+
+		print(avatar)
+		if avatar is not None:
+			# delete previous avatar file first if present
+			if user.avatar_url:
+				try:
+					storage.delete_by_url(user.avatar_url)
+				except Exception:
+					pass
+			try:
+				file_url, size, filename = storage.save_avatar(avatar)
+			except Exception:
+				raise HTTPException(status_code=500, detail="保存头像文件失败")
+			# store a URL path that the frontend can access directly (e.g. via static server)
+			user.avatar_url = file_url
+		elif avatar_url:
+			print("nmsl")
+			# frontend may pass an already-uploaded file URL instead of file
+			user.avatar_url = avatar_url
+
+		user.updated_at = datetime.utcnow()
+		db.commit()
+
+		print(user.avatar_url)
+		return {
+			"code": 200,
+			"message": "更新成功",
+			"data": {
+				"user_id": user.user_id,
+				"student_id": user.student_id,
+				"name": user.name,
+				"email": user.email,
+				"phone": user.phone,
+				"avatar_url": user.avatar_url,
+				"created_at": user.created_at.isoformat() if getattr(user, 'created_at', None) else None,
+				"updated_at": user.updated_at.isoformat() if getattr(user, 'updated_at', None) else None,
+			}
+		}
+	finally:
+		db.close()
+		
 """ 查看个人信息 """
 class UserInfomation(BaseModel):
 	user_id: str
@@ -106,65 +174,15 @@ class UserInfomation(BaseModel):
 @app.get("/api/v1/me", response_model=UserInfomation)
 def me(current_user: database.User = Depends(get_current_user)):
 	return UserInfomation(
-		user_id=current_user.user_id,
+		user_id=str(current_user.user_id),
 		student_id=current_user.student_id,
 		name=current_user.name,
 		email=current_user.email,
 		phone=current_user.phone,
 		avatar_url=current_user.avatar_url,
-		created_at=current_user.created_at,
-		updated_at=current_user.updated_at,
+		created_at=current_user.created_at.isoformat(),
+		updated_at=current_user.updated_at.isoformat(),
 	)
-
-"""修改个人信息"""
-class UpdateRequest(BaseModel):
-	name: Optional[str] = None
-	email: Optional[str] = None
-	phone: Optional[str] = None
-	avatar_url: Optional[str] = None
-	old_password: Optional[str] = None
-	new_password: Optional[str] = None
-
-@app.put("/api/v1/users/me")
-def update_user_info(
-	payload: UpdateRequest,
-	current_user: database.User = Depends(get_current_user)
-):
-	db = database.SessionLocal()
-	try:
-		user = db.query(database.User).filter(database.User.user_id == current_user.user_id).first()
-		if payload.name:
-			user.name = payload.name
-		if payload.email:
-			user.email = payload.email
-		if payload.phone:
-			user.phone = payload.phone
-		if payload.avatar_url:
-			user.avatar_url = payload.avatar_url
-
-		if payload.old_password and payload.new_password:
-			if hash_password(user.salt, payload.old_password) != user.password_hash:
-				raise HTTPException(status_code=400, detail="旧密码错误")
-			user.password_hash = hash_password(user.salt, payload.new_password)
-
-		user.updated_at = datetime.utcnow()
-		db.commit()
-		return {
-			"code": 200,
-			"message": "更新成功",
-			"data": {
-				"user_id": current_user.user_id,
-				"student_id": current_user.student_id,
-				"name": current_user.name,
-				"email": current_user.email,
-				"phone": current_user.phone,
-				"avatar_url": current_user.avatar_url,
-				"created_at": current_user.created_at,
-				"updated_at": current_user.updated_at,
-			}
-		}
-	finally:
-		db.close()
 
 """获取小程序列表"""
 class MiniProgramOut(BaseModel):
@@ -305,8 +323,7 @@ class SubmissionOut(BaseModel):
 	feedback: str | None
 
 UPLOAD_DIR = "uploads/submissions"
-
-FILES_UPLOAD_DIR = "uploads/files"
+AVATATS_UPLOAD_DIR = "uploads/avatars"
 
 # Ensure any new tables (e.g., post_likes) are created
 try:
@@ -555,62 +572,7 @@ def mark_all_notifications_read(current_user: database.User = Depends(get_curren
 	finally:
 		db.close()
 
-### 文件接口 ###
-
-@app.post('/api/v1/files/upload')
-def upload_file(file: UploadFile = File(...), purpose: str | None = Form(None), related_id: int | None = Form(None), current_user: database.User = Depends(get_current_user)):
-	db = database.SessionLocal()
-	try:
-		file_url, size, saved_name = storage.save_uploaded_file(file)
-		rec = database.File(user_id=current_user.user_id, file_name=file.filename, file_url=file_url, file_size=size, mime_type=file.content_type)
-		db.add(rec)
-		db.commit()
-		db.refresh(rec)
-		return { 'code':200, 'message':'上传成功', 'data': { 'file_id': rec.file_id, 'file_name': rec.file_name, 'file_url': rec.file_url, 'file_size': rec.file_size, 'mime_type': rec.mime_type, 'user_id': rec.user_id, 'created_at': rec.created_at } }
-	finally:
-		db.close()
-
-
-@app.get('/api/v1/files/{file_id}')
-def get_file_info(file_id: int, current_user: database.User = Depends(get_current_user)):
-	db = database.SessionLocal()
-	try:
-		f = db.query(database.File).filter(database.File.file_id == file_id).first()
-		if not f:
-			raise HTTPException(status_code=404, detail='文件不存在')
-		return { 'code':200, 'message':'成功', 'data': { 'file_id': f.file_id, 'file_name': f.file_name, 'file_url': f.file_url, 'file_size': f.file_size, 'mime_type': f.mime_type, 'user_id': f.user_id, 'created_at': f.created_at } }
-	finally:
-		db.close()
-
-
-@app.get('/api/v1/files/{file_id}/download')
-def download_file(file_id: int, current_user: database.User = Depends(get_current_user)):
-	db = database.SessionLocal()
-	try:
-		f = db.query(database.File).filter(database.File.file_id == file_id).first()
-		if not f:
-			raise HTTPException(status_code=404, detail='文件不存在')
-		# 本实现简单返回文件路径（生产环境请使用安全的文件服务或临时签名 URL）
-		return { 'code':200, 'message':'成功', 'data': { 'file_url': f.file_url } }
-	finally:
-		db.close()
-
-
-@app.delete('/api/v1/files/{file_id}')
-def delete_file(file_id: int, current_user: database.User = Depends(get_current_user)):
-	db = database.SessionLocal()
-	try:
-		f = db.query(database.File).filter(database.File.file_id == file_id).first()
-		if not f:
-			raise HTTPException(status_code=404, detail='文件不存在')
-		if f.user_id != current_user.user_id:
-			raise HTTPException(status_code=403, detail='没有权限')
-		db.delete(f)
-		db.commit()
-		return { 'code':200, 'message':'删除成功', 'data': None }
-	finally:
-		db.close()
-
+### 交作业 ###
 
 @app.post(
 	"/api/v1/assignments/{assignment_id}/submit",
@@ -659,5 +621,3 @@ def submit_assignment(
 		)
 	finally:
 		db.close()
-	
-	

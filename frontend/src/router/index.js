@@ -16,6 +16,12 @@ const routes = [
     component: () => import('../views/MiniappsView.vue'),
     meta: { requiresAuth: true }
   },
+  {
+    path: '/profile',
+    name: 'profile',
+    component: () => import('../views/ProfileView.vue'),
+    meta: { requiresAuth: true }
+  },
 //   {
 //     path: '/homework',
 //     name: 'homework',

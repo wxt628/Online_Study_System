@@ -18,13 +18,29 @@ export const useAuthStore = defineStore('auth', () => {
     
     try {
       const response = await login(credentials)
-      const { token: authToken, student_id: userData } = response.data
-      // 存储 token 和用户信息
+      // 兼容不同后端返回格式（可能为 { code,message,data:{token, ...} }）
+      const payload = response.data?.data || response.data || {}
+      const authToken = payload?.token || payload?.access_token || response.data?.token || response.data?.access_token || null
+      if (!authToken) {
+        throw new Error('登录返回中未包含 token')
+      }
+
+      // 存储 token（先存 token，后续用 /me 拉取完整用户信息）
       token.value = authToken
-      user.value = userData
       localStorage.setItem('token', authToken)
-      localStorage.setItem('user', JSON.stringify(userData))
-      return { success: true, data: userData }
+
+      // 尝试使用 /me 接口获取并保存用户信息
+      try {
+        const meResp = await getCurrentUser()
+        // getCurrentUser 已在接口层做过 unwrap，如果后端仍然返回包装对象也能兼容
+        user.value = meResp.data
+        localStorage.setItem('user', JSON.stringify(meResp.data))
+        return { success: true, data: meResp.data }
+      } catch (meErr) {
+        // 如果 /me 失败，仍将登录视为成功，但返回 token 信息，前端可重试获取用户信息
+        console.warn('登录后拉取用户信息失败:', meErr)
+        return { success: true, data: null }
+      }
     } catch (err) {
       error.value = err.response?.data?.message || '登录失败'
       return { success: false, error: error.value }
@@ -35,10 +51,8 @@ export const useAuthStore = defineStore('auth', () => {
   
   // 获取当前用户
   const fetchCurrentUser = async () => {
-    // TODO 后端还没写这个接口
-    return
     if (!token.value) return
-    
+
     try {
       const response = await getCurrentUser()
       user.value = response.data
