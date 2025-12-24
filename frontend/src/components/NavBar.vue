@@ -150,7 +150,7 @@ const handleLogin = async () => {
   })
   if (result.success) {
     closeModal()
-    router.push('/')
+    window.location.reload(false)
     showToast('登陆成功！', 'success')
   } else {
     successLogin.value = false;
@@ -161,7 +161,7 @@ const handleLogin = async () => {
 const handleLogout = async () => {
   showDropdown.value = false
   await authStore.logout()
-  router.push('/')
+  window.location.reload(false)
 }
 
 const goToProfile = () => {

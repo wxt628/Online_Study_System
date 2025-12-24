@@ -156,13 +156,13 @@ const loadMiniPrograms = async () => {
     console.log(response)
     if (response.status === 200) {
       miniPrograms.value = response.data
-      loading.value = false
     }
+    loading.value = false
   } catch (err) {
+    loading.value = false
     console.error('加载小程序失败:', err)
     error.value = '加载失败，请稍后重试'
     miniPrograms.value = mockData.miniPrograms
-    loading.value = false
   }
 }
 
