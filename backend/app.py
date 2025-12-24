@@ -194,7 +194,7 @@ class MiniProgramOut(BaseModel):
 	category: str
 	is_active: bool
 	display_order: int
-	created_at: str
+	created_at: datetime
 
 class MiniProgramList(BaseModel):
 	mini_programs_list: list[MiniProgramOut]
@@ -214,7 +214,18 @@ def get_mini_programs(
 			query = query.filter(database.MiniProgram.category == category)
 		items = query.all()
 		
-		return [MiniProgramOut( x.program_id, x.name, x.icon_url, x.description, x.url, x.category, x.is_active, x.display_order, x.created_at ) for x in items ]
+		return [MiniProgramOut(
+			program_id=x.program_id,
+			name=x.name,
+			icon_url=x.icon_url,
+			description=x.description,
+			url=x.url,
+			category=x.category,
+			is_active=x.is_active,
+			display_order=x.display_order,
+			created_at=x.created_at
+		) for x in items ]
+
 	finally:
 		db.close()
 

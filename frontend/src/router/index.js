@@ -28,12 +28,12 @@ const routes = [
     component: () => import('../views/HomeworkView.vue'),
     meta: { requiresAuth: true }
   },
-//   {
-//     path: '/forum',
-//     name: 'forum',
-//     component: () => import('../views/ForumView.vue'),
-//     meta: { requiresAuth: true }
-//   }
+  {
+    path: '/forum',
+    name: 'forum',
+    component: () => import('../views/ForumView.vue'),
+    meta: { requiresAuth: true }
+  }
 ]
 
 const router = createRouter({
