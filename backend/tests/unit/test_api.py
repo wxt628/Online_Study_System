@@ -2,6 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 from src.database import User
 import hashlib
+from unittest.mock import patch
 
 class TestAPIModule:
     
@@ -16,7 +17,11 @@ class TestAPIModule:
             student_id="2023191134",
             name="测试用户",
             password_hash=password_hash,
-            salt=salt
+            salt=salt,
+            failed_attempts=0,
+            locked_until=None,
+            email="test@example.com",
+            phone="1234567890"
         )
         db_session.add(user)
         db_session.commit()
@@ -42,6 +47,7 @@ class TestAPIModule:
         
         assert response.status_code == 401
         data = response.json()
+        assert "detail" in data
         assert "error" in data["detail"]
     
     def test_login_wrong_password(self, client, db_session):
@@ -53,7 +59,11 @@ class TestAPIModule:
             student_id="2023191134",
             name="测试用户",
             password_hash=password_hash,
-            salt=salt
+            salt=salt,
+            failed_attempts=0,
+            locked_until=None,
+            email="test@example.com",
+            phone="1234567890"
         )
         db_session.add(user)
         db_session.commit()
@@ -65,6 +75,7 @@ class TestAPIModule:
         
         assert response.status_code == 401
         data = response.json()
+        assert "detail" in data
         assert "error" in data["detail"]
     
     def test_get_me_with_valid_token(self, client, db_session):
@@ -74,7 +85,11 @@ class TestAPIModule:
             student_id="2023191134",
             name="魏小天",
             password_hash="hash",
-            salt="salt"
+            salt="salt",
+            failed_attempts=0,
+            locked_until=None,
+            email="test@example.com",
+            phone="1234567890"
         )
         db_session.add(user)
         db_session.commit()

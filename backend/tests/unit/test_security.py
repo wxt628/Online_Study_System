@@ -1,6 +1,7 @@
 import pytest
 from datetime import datetime, timedelta
 from jose import jwt
+from fastapi import HTTPException
 from src.security import (
     create_access_token,
     get_current_user,
@@ -8,6 +9,7 @@ from src.security import (
     ALGORITHM
 )
 from src.database import User
+from unittest.mock import patch
 
 class TestSecurityModule:
     
@@ -51,7 +53,11 @@ class TestSecurityModule:
             student_id="2023191134",
             name="测试用户",
             password_hash="test_hash",
-            salt="test_salt"
+            salt="test_salt",
+            failed_attempts=0,
+            locked_until=None,
+            email="test@example.com",
+            phone="1234567890"
         )
         db_session.add(user)
         db_session.commit()
@@ -59,19 +65,21 @@ class TestSecurityModule:
         # 创建令牌
         token = create_access_token(data={"sub": "2023191134"})
         
-        # 测试获取当前用户
-        current_user = get_current_user(token)
-        assert current_user.student_id == "2023191134"
-        assert current_user.name == "测试用户"
+        # 测试获取当前用户 - 使用client而不是直接调用函数
+        response = client.get("/api/v1/me", headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == 200
+        data = response.json()
+        assert data["student_id"] == "2023191134"
+        assert data["name"] == "测试用户"
     
-    def test_get_current_user_invalid_token(self):
+    def test_get_current_user_invalid_token(self, client):
         """测试无效令牌的用户获取"""
-        with pytest.raises(Exception):
-            get_current_user("invalid_token")
+        response = client.get("/api/v1/me", headers={"Authorization": "Bearer invalid_token"})
+        assert response.status_code == 401
     
-    def test_get_current_user_nonexistent_user(self, db_session):
+    def test_get_current_user_nonexistent_user(self, client):
         """测试不存在的用户令牌"""
         token = create_access_token(data={"sub": "nonexistent_user"})
         
-        with pytest.raises(Exception):
-            get_current_user(token)
+        response = client.get("/api/v1/me", headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == 401
