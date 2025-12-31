@@ -1,15 +1,8 @@
 from datetime import datetime
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, Float, Text, ForeignKey, create_engine
 from sqlalchemy.orm import sessionmaker, relationship, declarative_base
-import os
 
-# 添加环境变量支持
-DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://thephix:123456@172.31.68.181:3306/campus_platform?charset=utf8mb4")
-
-# 如果是测试环境，使用SQLite内存数据库
-if os.getenv("TESTING") == "1":
-    DATABASE_URL = "sqlite:///:memory:"
-
+DATABASE_URL = "mysql+pymysql://thephix:123456@127.0.0.1:3306/campus_platform?charset=utf8mb4"
 Base = declarative_base()
 
 # 用户表
@@ -24,7 +17,7 @@ class User(Base):
 	locked_until      = Column(DateTime, default=None)
 	name              = Column(String(50), nullable=False)
 	email             = Column(String(100), unique=True)
-	phone             = Column(String(20))
+	phone             = Column(String(20), nullable=False)
 	avatar_url        = Column(String(255))
 	created_at        = Column(DateTime, default=datetime.utcnow)
 	updated_at        = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -156,10 +149,5 @@ class File(Base):
 
 	user = relationship("User", back_populates="files")
 
-# 添加SQLite支持的参数
-connect_args = {}
-if DATABASE_URL.startswith("sqlite"):
-    connect_args["check_same_thread"] = False
-
-engine = create_engine(DATABASE_URL, connect_args=connect_args)
+engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)

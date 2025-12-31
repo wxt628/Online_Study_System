@@ -28,8 +28,11 @@ async def update_user(
 		user.name = name
 	if email:
 		user.email = email
-	if phone:
-		user.phone = phone
+	if phone is not None:
+		p = phone.strip()
+		if not p:
+			raise HTTPException(status_code=422, detail="手机号不能为空")
+		user.phone = p
 
 	if avatar is not None:
 		# delete previous avatar file first if present
