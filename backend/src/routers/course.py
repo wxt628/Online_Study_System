@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Body
 from sqlalchemy.orm import Session
 from datetime import datetime
 from src import database, storage
@@ -19,6 +19,25 @@ def get_courses(
 		query = query.filter(database.Course.semester == semester)
 	items = query.all()
 	
+	return [CourseOut(
+        course_id=x.course_id, 
+        course_code=x.course_code, 
+        name=x.name, 
+        teacher=x.teacher, 
+        semester=x.semester 
+    ) for x in items ]
+
+@router.post("/courses/query", response_model=list[CourseOut])
+def query_courses(
+	payload: dict = Body(None),
+	_: database.User = Depends(get_current_user),
+	db: Session = Depends(get_db)
+):
+	semester = (payload or {}).get('semester')
+	query = db.query(database.Course)
+	if semester:
+		query = query.filter(database.Course.semester == semester)
+	items = query.all()
 	return [CourseOut(
         course_id=x.course_id, 
         course_code=x.course_code, 

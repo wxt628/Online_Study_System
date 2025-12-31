@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Body
 from sqlalchemy.orm import Session
 from datetime import datetime
 import math
@@ -13,6 +13,36 @@ def list_notifications(page: int = Query(1, ge=1), pageSize: int = Query(20, ge=
 	q = db.query(database.Notification).filter(database.Notification.user_id == current_user.user_id)
 	if is_read is not None:
 		q = q.filter(database.Notification.is_read == is_read)
+	total = q.count()
+	items = q.order_by(database.Notification.created_at.desc()).offset((page-1)*pageSize).limit(pageSize).all()
+	result = []
+	for n in items:
+		result.append({ 'notification_id': n.notification_id, 'user_id': n.user_id, 'title': n.title, 'content': n.content, 'type': n.type, 'is_read': n.is_read, 'related_url': n.related_url, 'created_at': n.created_at })
+	return { 'code':200, 'message':'成功', 'data': { 'items': result, 'pagination': { 'total': total, 'page': page, 'pageSize': pageSize, 'totalPages': math.ceil(total / pageSize) } } }
+
+@router.post('/notifications/query')
+def query_notifications(payload: dict = Body(None), current_user: database.User = Depends(get_current_user), db: Session = Depends(get_db)):
+	page = int((payload or {}).get('page') or 1)
+	pageSize = int((payload or {}).get('pageSize') or 20)
+	is_read = (payload or {}).get('is_read')
+	q = db.query(database.Notification).filter(database.Notification.user_id == current_user.user_id)
+	if is_read is not None:
+		q = q.filter(database.Notification.is_read == bool(is_read))
+	total = q.count()
+	items = q.order_by(database.Notification.created_at.desc()).offset((page-1)*pageSize).limit(pageSize).all()
+	result = []
+	for n in items:
+		result.append({ 'notification_id': n.notification_id, 'user_id': n.user_id, 'title': n.title, 'content': n.content, 'type': n.type, 'is_read': n.is_read, 'related_url': n.related_url, 'created_at': n.created_at })
+	return { 'code':200, 'message':'成功', 'data': { 'items': result, 'pagination': { 'total': total, 'page': page, 'pageSize': pageSize, 'totalPages': math.ceil(total / pageSize) } } }
+
+@router.post('/notifications/query')
+def query_notifications(payload: dict = Body(None), current_user: database.User = Depends(get_current_user), db: Session = Depends(get_db)):
+	page = int((payload or {}).get('page') or 1)
+	pageSize = int((payload or {}).get('pageSize') or 20)
+	is_read = (payload or {}).get('is_read')
+	q = db.query(database.Notification).filter(database.Notification.user_id == current_user.user_id)
+	if is_read is not None:
+		q = q.filter(database.Notification.is_read == bool(is_read))
 	total = q.count()
 	items = q.order_by(database.Notification.created_at.desc()).offset((page-1)*pageSize).limit(pageSize).all()
 	result = []
