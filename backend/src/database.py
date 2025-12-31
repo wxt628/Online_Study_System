@@ -8,7 +8,6 @@ Base = declarative_base()
 # 用户表
 class User(Base):
 	__tablename__ = 'users'
-
 	user_id           = Column(Integer, primary_key=True, autoincrement=True)
 	student_id        = Column(String(20), unique=True, nullable=False)
 	password_hash     = Column(String(255), nullable=False)
