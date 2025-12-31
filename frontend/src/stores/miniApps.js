@@ -112,26 +112,7 @@ export const useMiniAppsStore = defineStore('miniApps', () => {
       }
     } catch (error) {
       console.error('加载小程序失败:', error)
-      // 如果API调用失败，使用默认数据
-      const defaultPrograms = [
-        { program_id: 1, name: "校园一卡通", description: "校园卡充值、消费记录查询", url: "#", category: "生活", display_order: 1, updated_at: "2024-03-10T10:00:00Z" },
-        { program_id: 2, name: "图书馆查询", description: "图书借阅、馆藏查询", url: "#", category: "教务", display_order: 2, updated_at: "2024-03-09T15:30:00Z" },
-        { program_id: 3, name: "课表查询", description: "个人课程表查看", url: "#", category: "教务", display_order: 3, updated_at: "2024-03-08T09:15:00Z" },
-        { program_id: 4, name: "电费缴纳", description: "宿舍电费查询与缴纳", url: "#", category: "生活", display_order: 4, updated_at: "2024-03-07T14:20:00Z" },
-        { program_id: 5, name: "成绩查询", description: "学期成绩查询", url: "#", category: "教务", display_order: 5, updated_at: "2024-03-06T11:45:00Z" },
-        { program_id: 6, name: "失物招领", description: "校园失物招领平台", url: "#", category: "生活", display_order: 6, updated_at: "2024-03-05T16:10:00Z" },
-        { program_id: 7, name: "校园网充值", description: "校园网套餐办理与充值", url: "#", category: "生活", display_order: 7, updated_at: "2024-03-04T13:25:00Z" },
-        { program_id: 8, name: "教室预约", description: "自习室、讨论室预约", url: "#", category: "教务", display_order: 8, updated_at: "2024-03-03T08:50:00Z" },
-        { program_id: 9, name: "校园公告", description: "学校新闻、通知公告", url: "#", category: "工具", display_order: 9, updated_at: "2024-03-02T11:30:00Z" },
-        { program_id: 10, name: "校园导航", description: "校园地图与导航", url: "#", category: "工具", display_order: 10, updated_at: "2024-03-01T14:15:00Z" },
-        { program_id: 11, name: "活动报名", description: "校园活动在线报名", url: "#", category: "生活", display_order: 11, updated_at: "2024-02-28T09:45:00Z" },
-        { program_id: 12, name: "校车时刻", description: "校车时刻表查询", url: "#", category: "工具", display_order: 12, updated_at: "2024-02-27T16:20:00Z" }
-      ]
-      
-      miniPrograms.value = defaultPrograms.map(program => ({
-        ...program,
-        icon_fa: getProgramIcon(program.name)
-      }))
+      miniPrograms.value = []
     } finally {
       loading.value = false
     }

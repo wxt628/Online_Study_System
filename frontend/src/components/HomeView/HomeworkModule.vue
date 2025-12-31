@@ -187,144 +187,147 @@
       </div>
     </div>
     
-    <!-- 作业详情模态框 -->
-    <div v-if="showDetailsModal && currentAssignment" class="modal-overlay" @click="closeDetailsModal">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>{{ currentAssignment.title }}</h3>
-          <button class="modal-close" @click="closeDetailsModal">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="assignment-detail">
-            <div class="detail-row">
-              <span class="label">课程:</span>
-              <span class="value">{{ getCourseName(currentAssignment.course_id) }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="label">截止时间:</span>
-              <span class="value deadline" :class="{ 'urgent': isUrgent(currentAssignment.deadline) }">
-                {{ formatDate(currentAssignment.deadline) }}
-              </span>
-            </div>
-            <div class="detail-row full-width">
-              <span class="label">作业描述:</span>
-              <div class="value description">
-                {{ currentAssignment.description }}
-              </div>
-            </div>
-            <div class="detail-row" v-if="currentAssignment.attachment_url">
-              <span class="label">附件:</span>
-              <button class="btn-attachment" @click="downloadAttachment(currentAssignment)">
-                <i class="fas fa-paperclip"></i> 下载附件
-              </button>
-            </div>
+    <!-- 模态框挂载到 body 以避免受父组件 transform 影响 -->
+    <Teleport to="body">
+      <!-- 作业详情模态框 -->
+      <div v-if="showDetailsModal && currentAssignment" class="modal-overlay" @click="closeDetailsModal">
+        <div class="modal-content" @click.stop>
+          <div class="modal-header">
+            <h3>{{ currentAssignment?.title }}</h3>
+            <button class="modal-close" @click="closeDetailsModal">
+              <i class="fas fa-times"></i>
+            </button>
           </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn-secondary" @click="closeDetailsModal">关闭</button>
-          <button class="btn-primary" @click="openSubmitModal(currentAssignment)">
-            <i class="fas fa-upload"></i> 提交作业
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 提交记录模态框 -->
-    <div v-if="showSubmissionsModal" class="modal-overlay" @click="closeSubmissionsModal">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>我的作业提交记录</h3>
-          <button class="modal-close" @click="closeSubmissionsModal">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="submissions-list">
-            <div v-if="currentSubmissions.length === 0" class="empty-state">
-              <i class="fas fa-inbox"></i>
-              <p>暂无提交记录</p>
-            </div>
-            <div 
-              v-for="s in currentSubmissions" 
-              :key="s.id || s.submission_id" 
-              class="submission-item"
-            >
-              <div>
-                <div>{{ formatDate(s.submitted_at || s.created_at) }}</div>
-                <div v-if="s.comment">{{ s.comment }}</div>
+          <div class="modal-body">
+            <div class="assignment-detail">
+              <div class="detail-row">
+                <span class="label">课程:</span>
+                <span class="value">{{ getCourseName(currentAssignment.course_id) }}</span>
               </div>
-              <div>
-                <button 
-                  class="btn-download" 
-                  v-if="s.file_url || s.attachment_url" 
-                  @click="downloadSubmission(s)"
-                >
-                  <i class="fas fa-download"></i> 下载已提交作业
+              <div class="detail-row">
+                <span class="label">截止时间:</span>
+                <span class="value deadline" :class="{ 'urgent': isUrgent(currentAssignment.deadline) }">
+                  {{ formatDate(currentAssignment.deadline) }}
+                </span>
+              </div>
+              <div class="detail-row full-width">
+                <span class="label">作业描述:</span>
+                <div class="value description">
+                  {{ currentAssignment.description }}
+                </div>
+              </div>
+              <div class="detail-row" v-if="currentAssignment.attachment_url">
+                <span class="label">附件:</span>
+                <button class="btn-attachment" @click="downloadAttachment(currentAssignment)">
+                  <i class="fas fa-paperclip"></i> 下载附件
                 </button>
               </div>
             </div>
           </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn-secondary" @click="closeSubmissionsModal">关闭</button>
+          <div class="modal-footer">
+            <button class="btn-secondary" @click="closeDetailsModal">关闭</button>
+            <button class="btn-primary" @click="openSubmitModal(currentAssignment)">
+              <i class="fas fa-upload"></i> 提交作业
+            </button>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- 提交作业模态框 -->
-    <div v-if="showSubmitModal" class="modal-overlay" @click="closeSubmitModal">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>提交作业 - {{ currentAssignment.title }}</h3>
-          <button class="modal-close" @click="closeSubmitModal">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <form @submit.prevent="submit">
-            <div class="form-group">
-              <label for="file">选择文件:</label>
-              <input 
-                type="file" 
-                id="file" 
-                ref="fileInput"
-                required
-                accept=".pdf,.doc,.docx,.zip,.rar,.txt"
-                @change="handleFileChange"
+      <!-- 提交记录模态框 -->
+      <div v-if="showSubmissionsModal" class="modal-overlay" @click="closeSubmissionsModal">
+        <div class="modal-content" @click.stop>
+          <div class="modal-header">
+            <h3>我的作业提交记录</h3>
+            <button class="modal-close" @click="closeSubmissionsModal">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="submissions-list">
+              <div v-if="currentSubmissions.length === 0" class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <p>暂无提交记录</p>
+              </div>
+              <div 
+                v-for="s in currentSubmissions" 
+                :key="s.id || s.submission_id" 
+                class="submission-item"
               >
-            </div>
-            <div class="form-group">
-              <label for="comment">备注 (可选):</label>
-              <textarea 
-                id="comment" 
-                v-model="submitComment" 
-                placeholder="可以添加备注信息..."
-                rows="3"
-              ></textarea>
-            </div>
-            <div class="form-group">
-              <div class="file-info" v-if="selectedFile">
-                已选择: {{ selectedFile.name }} ({{ formatFileSize(selectedFile.size) }})
+                <div>
+                  <div>{{ formatDate(s.submitted_at || s.created_at) }}</div>
+                  <div v-if="s.comment">{{ s.comment }}</div>
+                </div>
+                <div>
+                  <button 
+                    class="btn-download" 
+                    v-if="s.file_url || s.attachment_url" 
+                    @click="downloadSubmission(s)"
+                  >
+                    <i class="fas fa-download"></i> 下载已提交作业
+                  </button>
+                </div>
               </div>
             </div>
-          </form>
-        </div>
-        <div class="modal-footer">
-          <button class="btn-secondary" @click="closeSubmitModal">取消</button>
-          <button 
-            class="btn-primary" 
-            @click="submit"
-            :disabled="!selectedFile || submitting"
-          >
-            <i class="fas fa-upload" v-if="!submitting"></i>
-            <i class="fas fa-spinner fa-spin" v-if="submitting"></i>
-            {{ submitting ? '提交中...' : '提交作业' }}
-          </button>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-secondary" @click="closeSubmissionsModal">关闭</button>
+          </div>
         </div>
       </div>
-    </div>
+
+      <!-- 提交作业模态框 -->
+      <div v-if="showSubmitModal && currentAssignment" class="modal-overlay" @click="closeSubmitModal">
+        <div class="modal-content" @click.stop>
+          <div class="modal-header">
+            <h3>提交作业 - {{ currentAssignment?.title }}</h3>
+            <button class="modal-close" @click="closeSubmitModal">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="submit">
+              <div class="form-group">
+                <label for="file">选择文件:</label>
+                <input 
+                  type="file" 
+                  id="file" 
+                  ref="fileInput"
+                  required
+                  accept=".pdf,.doc,.docx,.zip,.rar,.txt"
+                  @change="handleFileChange"
+                >
+              </div>
+              <div class="form-group">
+                <label for="comment">备注 (可选):</label>
+                <textarea 
+                  id="comment" 
+                  v-model="submitComment" 
+                  placeholder="可以添加备注信息..."
+                  rows="3"
+                ></textarea>
+              </div>
+              <div class="form-group">
+                <div class="file-info" v-if="selectedFile">
+                  已选择: {{ selectedFile.name }} ({{ formatFileSize(selectedFile.size) }})
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-secondary" @click="closeSubmitModal">取消</button>
+            <button 
+              class="btn-primary" 
+              @click="submit"
+              :disabled="!selectedFile || submitting"
+            >
+              <i class="fas fa-upload" v-if="!submitting"></i>
+              <i class="fas fa-spinner fa-spin" v-if="submitting"></i>
+              {{ submitting ? '提交中...' : '提交作业' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 

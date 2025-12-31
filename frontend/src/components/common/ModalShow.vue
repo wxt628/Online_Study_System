@@ -1,42 +1,44 @@
 <template>
   <!-- 小程序详情弹窗 -->
-  <div v-if="modelValue" class="program-modal" @click.self="closeModal">
-    <div class="program-modal-content">
-      <div class="modal-header">
-        <h3>{{ modelValue.name }}</h3>
-        <button class="modal-close" @click="closeModal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="program-detail">
-          <div class="program-icon-large" :style="{ backgroundColor: getCategoryColor(modelValue.category) }">
-            <i :class="getProgramIcon(modelValue.name)"></i>
-          </div>
-          <div class="program-info">
-            <div class="info-row">
-              <span class="label">分类：</span>
-              <span class="value">{{ modelValue.category }}</span>
-            </div>
-            <div class="info-row">
-              <span class="label">描述：</span>
-              <span class="value">{{ modelValue.description }}</span>
-            </div>
-            <div class="info-row">
-              <span class="label">更新时间：</span>
-              <span class="value">{{ formatDate(modelValue.updated_at) }}</span>
-            </div>
-          </div>
+  <Teleport to="body">
+    <div v-if="modelValue" class="program-modal" @click.self="closeModal">
+      <div class="program-modal-content">
+        <div class="modal-header">
+          <h3>{{ modelValue.name }}</h3>
+          <button class="modal-close" @click="closeModal">&times;</button>
         </div>
-        <div class="modal-actions">
-          <button class="btn btn-primary" @click="launchProgram(modelValue)">
-            <i class="fas fa-external-link-alt"></i> 立即使用
-          </button>
-          <button class="btn btn-secondary" @click="closeModal">
-            关闭
-          </button>
+        <div class="modal-body">
+          <div class="program-detail">
+            <div class="program-icon-large" :style="{ backgroundColor: getCategoryColor(modelValue.category) }">
+              <i :class="getProgramIcon(modelValue.name)"></i>
+            </div>
+            <div class="program-info">
+              <div class="info-row">
+                <span class="label">分类：</span>
+                <span class="value">{{ modelValue.category }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">描述：</span>
+                <span class="value">{{ modelValue.description }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">更新时间：</span>
+                <span class="value">{{ formatDate(modelValue.updated_at) }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button class="btn btn-primary" @click="launchProgram(modelValue)">
+              <i class="fas fa-external-link-alt"></i> 立即使用
+            </button>
+            <button class="btn btn-secondary" @click="closeModal">
+              关闭
+            </button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
+  </Teleport>
 </template>
 
 <script setup>
@@ -79,7 +81,16 @@ const getProgramIcon = (name) => {
 }
 
 const launchProgram = (program) => {
-  showToast('小程序暂未开放！', 'info')
+  const url = program && program.url
+  if (!url) {
+    showToast('未配置链接', 'error')
+    return
+  }
+  try {
+    window.open(url, '_blank', 'noopener,noreferrer')
+  } catch (e) {
+    location.href = url
+  }
   closeModal()
 }
 

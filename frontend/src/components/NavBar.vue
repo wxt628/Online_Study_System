@@ -43,39 +43,41 @@
         </div>
       </div>
 
-      <div class="modal" :class="{ 'show': showModal }">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h2>用户登录</h2>
-            <button class="modal-close" @click="closeModal">&times;</button>
-          </div>
-          <div class="modal-body">
-            <form @submit.prevent="handleLogin">
-              <div class="form-group">
-                <label for="student-id"><i class="fas fa-id-card"></i> 学号</label>
-                <input
-                  ref="studentIdInput"
-                  v-model="formData.studentId"
-                  type="text"
-                  placeholder="请输入学号"
-                  required
-                >
-              </div>
-              <div class="form-group">
-                <label for="password"><i class="fas fa-lock"></i> 密码</label>
-                <input
-                  v-model="formData.password"
-                  type="password"
-                  placeholder="请输入密码"
-                  required
-                >
-              </div>
-              <button type="submit" class="btn btn-primary btn-block">登录</button>
-            </form>
-            <div v-if="loginMessage" class="login-message" :class="{ 'success': successLogin, 'error': !successLogin }">{{ loginMessage }}</div>
+      <Teleport to="body">
+        <div class="modal" :class="{ 'show': showModal }">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h2>用户登录</h2>
+              <button class="modal-close" @click="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+              <form @submit.prevent="handleLogin">
+                <div class="form-group">
+                  <label for="student-id"><i class="fas fa-id-card"></i> 学号</label>
+                  <input
+                    ref="studentIdInput"
+                    v-model="formData.studentId"
+                    type="text"
+                    placeholder="请输入学号"
+                    required
+                  >
+                </div>
+                <div class="form-group">
+                  <label for="password"><i class="fas fa-lock"></i> 密码</label>
+                  <input
+                    v-model="formData.password"
+                    type="password"
+                    placeholder="请输入密码"
+                    required
+                  >
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">登录</button>
+              </form>
+              <div v-if="loginMessage" class="login-message" :class="{ 'success': successLogin, 'error': !successLogin }">{{ loginMessage }}</div>
+            </div>
           </div>
         </div>
-      </div>
+      </Teleport>
 
       <button class="mobile-menu-btn" @click="toggleMobileMenu">
         <i class="fas fa-bars"></i>

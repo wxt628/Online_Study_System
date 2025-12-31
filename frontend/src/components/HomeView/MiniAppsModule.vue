@@ -152,7 +152,8 @@ const loadMiniPrograms = async () => {
   error.value = null
   
   try {
-    const response = await getMiniProgram()
+    const payload = activeCategory.value !== 'all' ? { category: activeCategory.value } : {}
+    const response = await getMiniProgram(payload)
     console.log(response)
     if (response.status === 200) {
       miniPrograms.value = response.data
@@ -162,7 +163,7 @@ const loadMiniPrograms = async () => {
     loading.value = false
     console.error('加载小程序失败:', err)
     error.value = '加载失败，请稍后重试'
-    miniPrograms.value = mockData.miniPrograms
+    miniPrograms.value = []
   }
 }
 

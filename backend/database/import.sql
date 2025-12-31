@@ -50,4 +50,9 @@ INSERT INTO assignments (course_id, title, description, attachment_url, deadline
 SELECT course_id, '操作系统作业', '进程调度算法分析', NULL, '2026-01-20 23:59:59'
 FROM courses WHERE course_code='CS101';
 
-
+-- Mini Programs seed: 清空并插入两个示例
+TRUNCATE TABLE mini_programs;
+INSERT INTO mini_programs (name, icon_url, description, url, category, is_active, display_order)
+VALUES
+  ('办事大厅', '/icons/card.png', '校园卡充值、消费记录查询', 'https://portal.szu.edu.cn/default/index.html#/', '生活', TRUE, 1),
+  ('图书馆查询', '/icons/library.png', '图书馆数据库导航', 'https://www.lib.szu.edu.cn/er', '教务', TRUE, 2);

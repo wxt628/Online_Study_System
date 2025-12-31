@@ -86,6 +86,7 @@ import { ref, onMounted, computed } from 'vue'
 import { getCurrentUser, updateUserProfile } from '../api/interface'
 import api from '../api/config'
 import { useAuthStore } from '../stores/auth'
+import { showToast } from '../api/Toast'
 
 const authStore = useAuthStore()
 
@@ -184,9 +185,11 @@ const saveProfile = async () => {
     form.value.old_password = ''
     form.value.new_password = ''
     editMode.value = false
+    showToast('个人信息已更新', 'success')
   } catch (err) {
     console.error('更新用户信息失败', err)
     error.value = err.response?.data?.message || '更新用户信息失败'
+    showToast(error.value, 'error')
   } finally {
     saving.value = false
   }

@@ -32,43 +32,45 @@
       </div>
     </div>
     
-    <!-- 编辑模态框 -->
-    <div v-if="showEditModal" class="modal show" @click.self="closeEditModal">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>编辑我的小程序</h2>
-          <button class="modal-close" @click="closeEditModal">&times;</button>
-        </div>
-        <div class="modal-body">
-          <div class="edit-mini-content">
-            <p>长按拖动调整顺序，点击 <i class="fas fa-times"></i> 移除</p>
-            <div class="edit-mini-list" ref="editList">
-              <div 
-                v-for="program in favoritePrograms" 
-                :key="program.program_id" 
-                class="edit-mini-item"
-                :data-program-id="program.program_id"
-              >
-                <div class="edit-mini-icon" :style="{ backgroundColor: getIconColor(program.program_id) }">
-                  <i :class="program.icon_fa || 'fa-th-large'"></i>
+    <Teleport to="body">
+      <!-- 编辑模态框 -->
+      <div v-if="showEditModal" class="modal show" @click.self="closeEditModal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>编辑我的小程序</h2>
+            <button class="modal-close" @click="closeEditModal">&times;</button>
+          </div>
+          <div class="modal-body">
+            <div class="edit-mini-content">
+              <p>长按拖动调整顺序，点击 <i class="fas fa-times"></i> 移除</p>
+              <div class="edit-mini-list" ref="editList">
+                <div 
+                  v-for="program in favoritePrograms" 
+                  :key="program.program_id" 
+                  class="edit-mini-item"
+                  :data-program-id="program.program_id"
+                >
+                  <div class="edit-mini-icon" :style="{ backgroundColor: getIconColor(program.program_id) }">
+                    <i :class="program.icon_fa || 'fa-th-large'"></i>
+                  </div>
+                  <div class="edit-mini-info">
+                    <div class="edit-mini-name">{{ program.name }}</div>
+                    <div class="edit-mini-category">{{ program.category }}</div>
+                  </div>
+                  <button class="edit-mini-remove" @click="removeFromFavorites(program.program_id)">
+                    <i class="fas fa-times"></i>
+                  </button>
                 </div>
-                <div class="edit-mini-info">
-                  <div class="edit-mini-name">{{ program.name }}</div>
-                  <div class="edit-mini-category">{{ program.category }}</div>
-                </div>
-                <button class="edit-mini-remove" @click="removeFromFavorites(program.program_id)">
-                  <i class="fas fa-times"></i>
-                </button>
               </div>
-            </div>
-            <div class="edit-mini-buttons">
-              <button class="btn btn-primary" @click="saveEdit">保存</button>
-              <button class="btn btn-secondary" @click="closeEditModal">取消</button>
+              <div class="edit-mini-buttons">
+                <button class="btn btn-primary" @click="saveEdit">保存</button>
+                <button class="btn btn-secondary" @click="closeEditModal">取消</button>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </Teleport>
     <ModalShow v-model="currentProgram" />
   </section>
 </template>

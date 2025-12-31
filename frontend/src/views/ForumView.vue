@@ -449,88 +449,90 @@
       </div>
     </div>
 
-    <!-- 发帖模态框 -->
-    <div v-if="showCreatePost" class="modal-overlay">
-      <div class="modal">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h2 class="modal-title">发布新帖子</h2>
-            <button
-              @click="showCreatePost = false"
-              class="modal-close"
-            >
-              ✕
-            </button>
-          </div>
-          
-          <form @submit.prevent="createPost" class="modal-form">
-            <div class="form-group">
-              <label class="form-label">标题</label>
-              <input
-                v-model="newPost.title"
-                type="text"
-                placeholder="请输入帖子标题..."
-                required
-                class="form-input"
-              />
+    <Teleport to="body">
+      <!-- 发帖模态框 -->
+      <div v-if="showCreatePost" class="modal-overlay">
+        <div class="modal">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h2 class="modal-title">发布新帖子</h2>
+              <button
+                @click="showCreatePost = false"
+                class="modal-close"
+              >
+                ✕
+              </button>
             </div>
             
-            <div class="form-group">
-              <label class="form-label">分类</label>
-              <div class="category-selection">
+            <form @submit.prevent="createPost" class="modal-form">
+              <div class="form-group">
+                <label class="form-label">标题</label>
+                <input
+                  v-model="newPost.title"
+                  type="text"
+                  placeholder="请输入帖子标题..."
+                  required
+                  class="form-input"
+                />
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">分类</label>
+                <div class="category-selection">
+                  <button
+                    v-for="cat in categories.filter(c => c.value)"
+                    :key="cat.value"
+                    type="button"
+                    @click="newPost.category = cat.value"
+                    :class="['category-option', newPost.category === cat.value && 'selected']"
+                  >
+                    <span class="category-option-icon">{{ cat.icon }}</span>
+                    <span class="category-option-label">{{ cat.label }}</span>
+                  </button>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label class="form-label">内容</label>
+                <div class="editor-wrapper">
+                  <div class="editor-toolbar">
+                    <button type="button" class="editor-btn">B</button>
+                    <button type="button" class="editor-btn">
+                      <i>I</i>
+                    </button>
+                    <button type="button" class="editor-btn">U</button>
+                  </div>
+                  <textarea
+                    v-model="newPost.content"
+                    placeholder="请输入帖子内容..."
+                    rows="10"
+                    required
+                    class="editor-textarea"
+                  ></textarea>
+                </div>
+              </div>
+              
+              <div class="form-actions">
                 <button
-                  v-for="cat in categories.filter(c => c.value)"
-                  :key="cat.value"
                   type="button"
-                  @click="newPost.category = cat.value"
-                  :class="['category-option', newPost.category === cat.value && 'selected']"
+                  @click="showCreatePost = false"
+                  class="btn btn-cancel"
                 >
-                  <span class="category-option-icon">{{ cat.icon }}</span>
-                  <span class="category-option-label">{{ cat.label }}</span>
+                  取消
+                </button>
+                <button
+                  type="submit"
+                  :disabled="!newPost.title.trim() || !newPost.content.trim()"
+                  :class="['btn', 'btn-submit', (!newPost.title.trim() || !newPost.content.trim()) && 'disabled']"
+                >
+                  发布
                 </button>
               </div>
-            </div>
-            
-            <div class="form-group">
-              <label class="form-label">内容</label>
-              <div class="editor-wrapper">
-                <div class="editor-toolbar">
-                  <button type="button" class="editor-btn">B</button>
-                  <button type="button" class="editor-btn">
-                    <i>I</i>
-                  </button>
-                  <button type="button" class="editor-btn">U</button>
-                </div>
-                <textarea
-                  v-model="newPost.content"
-                  placeholder="请输入帖子内容..."
-                  rows="10"
-                  required
-                  class="editor-textarea"
-                ></textarea>
-              </div>
-            </div>
-            
-            <div class="form-actions">
-              <button
-                type="button"
-                @click="showCreatePost = false"
-                class="btn btn-cancel"
-              >
-                取消
-              </button>
-              <button
-                type="submit"
-                :disabled="!newPost.title.trim() || !newPost.content.trim()"
-                :class="['btn', 'btn-submit', (!newPost.title.trim() || !newPost.content.trim()) && 'disabled']"
-              >
-                发布
-              </button>
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
       </div>
-    </div>
+    </Teleport>
   </div>
 </template>
 

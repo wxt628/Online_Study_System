@@ -9,7 +9,7 @@
       <MiniProgramsModule />
       
       <!-- 作业平台模块 -->
-      <AssignmentsModule />
+      <AssignmentsModule :showAll="true" />
       
       <!-- 论坛平台模块 -->
       <PostsModule />
