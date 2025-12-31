@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from datetime import datetime
 import os
 
-DATABASE_URL = "mysql+pymysql://用户名:密码@localhost:3306/campus_platform?charset=utf8mb4"
+DATABASE_URL = "mysql+pymysql://thephix:123456@localhost:3306/campus_platform?charset=utf8mb4"
 
 app = FastAPI(
     title="校园综合平台 API",
@@ -17,7 +17,7 @@ app = FastAPI(
 # 允许CORS，前端本地开发
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:5500", "http://localhost:5500", "http://localhost:3000"],
+    allow_origins=["http://127.0.0.1:5500", "http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]

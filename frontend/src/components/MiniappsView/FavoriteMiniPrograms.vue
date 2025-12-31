@@ -3,9 +3,6 @@
   <section class="my-mini-section">
     <div class="section-header">
       <h2><i class="fas fa-star"></i> 我的小程序</h2>
-      <button class="btn-edit" @click="openEditModal">
-        <i class="fas fa-edit"></i> 编辑
-      </button>
     </div>
     <div class="my-mini-grid">
       <div 
@@ -72,6 +69,7 @@
         </div>
       </div>
     </div>
+    <ModalShow v-model="currentProgram" />
   </section>
 </template>
 
@@ -79,12 +77,14 @@
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 import { useMiniAppsStore } from '../../stores/miniApps'
+import ModalShow from '../common/ModalShow.vue'
 
 const authStore = useAuthStore()
 const miniAppsStore = useMiniAppsStore()
 const showEditModal = ref(false)
 const editListRef = ref(null)
 let sortableInstance = null
+const currentProgram = ref(null)
 
 // 组件属性
 const props = defineProps({
@@ -105,6 +105,7 @@ const getIconColor = (programId) => {
 
 const openMiniProgram = (program) => {
   // 记录最近使用
+  currentProgram.value = program
   miniAppsStore.addRecentUse(program.program_id)
   emit('open-program', program)
 }

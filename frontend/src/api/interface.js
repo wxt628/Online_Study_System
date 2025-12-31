@@ -43,3 +43,59 @@ export const getMiniProgram = () => {
     return resp
   })
 }
+
+// 在 interface.js 文件中添加以下函数
+
+// 获取课程列表
+export const getCourses = (semester) => {
+  const params = semester ? { semester } : {}
+  return api.get('/courses', { params }).then((resp) => {
+    if (resp?.data && resp.data.data) resp.data = resp.data.data
+    return resp
+  })
+}
+
+// 获取课程详情
+export const getCourseDetail = (courseId) => {
+  return api.get(`/courses/${courseId}`).then((resp) => {
+    if (resp?.data && resp.data.data) resp.data = resp.data.data
+    return resp
+  })
+}
+
+// 获取课程作业列表
+export const getCourseAssignments = (courseId) => {
+  return api.get(`/courses/${courseId}/assignments`).then((resp) => {
+    if (resp?.data && resp.data.data) resp.data = resp.data.data
+    return resp
+  })
+}
+
+// 获取作业详情
+export const getAssignment = (assignmentId) => {
+  return api.get(`/assignments/${assignmentId}`).then((resp) => {
+    if (resp?.data && resp.data.data) resp.data = resp.data.data
+    return resp
+  })
+}
+
+// 提交作业
+export const submitAssignment = (assignmentId, formData) => {
+  // formData 应该包含 file 和 comment（可选）
+  return api.post(`/assignments/${assignmentId}/submit`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  }).then((resp) => {
+    if (resp?.data && resp.data.data) resp.data = resp.data.data
+    return resp
+  })
+}
+
+// 获取作业提交记录（如果需要）
+export const getAssignmentSubmissions = (assignmentId) => {
+  return api.get(`/assignments/${assignmentId}/submissions`).then((resp) => {
+    if (resp?.data && resp.data.data) resp.data = resp.data.data
+    return resp
+  })
+}

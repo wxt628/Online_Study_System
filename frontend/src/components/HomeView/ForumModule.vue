@@ -108,20 +108,12 @@
       <div v-if="!loading && posts.length === 0" class="empty-state">
         <div class="empty-state-icon">📝</div>
         <h3 class="empty-state-title">暂无帖子</h3>
-        <p class="empty-state-description">快来发布第一条帖子吧~</p>
         <button 
           class="btn-post-first" 
           v-if="authStore.isAuthenticated" 
           @click="goToFullEditor"
         >
           发布第一个帖子
-        </button>
-        <button 
-          class="btn-login" 
-          v-else
-          @click="emit('needLogin')"
-        >
-          登录后发帖
         </button>
       </div>
 
@@ -249,56 +241,7 @@ const loadPosts = async () => {
 
 const loadMockPosts = () => {
   // 模拟数据
-  const mockPosts = [
-    { 
-      post_id: 1, 
-      title: "寻找一起学习的小伙伴", 
-      content: "有没有同学想一起准备期末考试？我们可以组织学习小组，互相督促，共同进步。",
-      content_preview: "有没有同学想一起准备期末考试？我们可以组织学习小组，互相督促，共同进步。",
-      author: { 
-        user_id: 2, 
-        name: "李四"
-      }, 
-      category: "教务", 
-      like_count: 15, 
-      view_count: 120, 
-      comment_count: 8, 
-      created_at: "2024-03-10T14:30:00Z",
-      is_liked: false
-    },
-    { 
-      post_id: 2, 
-      title: "转让二手教材", 
-      content: "计算机组成原理教材，九成新，原价65元，现在30元转让。",
-      content_preview: "计算机组成原理教材，九成新，原价65元，现在30元转让。",
-      author: { 
-        user_id: 3, 
-        name: "王五"
-      }, 
-      category: "生活", 
-      like_count: 5, 
-      view_count: 80, 
-      comment_count: 3, 
-      created_at: "2024-03-09T10:15:00Z",
-      is_liked: true
-    },
-    { 
-      post_id: 3, 
-      title: "校园篮球赛招募队员", 
-      content: "本周五下午校园篮球赛，现招募队员3名。要求有一定篮球基础。",
-      content_preview: "本周五下午校园篮球赛，现招募队员3名。要求有一定篮球基础。",
-      author: { 
-        user_id: 4, 
-        name: "赵六"
-      }, 
-      category: "娱乐", 
-      like_count: 12, 
-      view_count: 95, 
-      comment_count: 5, 
-      created_at: "2024-03-11T09:30:00Z",
-      is_liked: false
-    }
-  ]
+  const mockPosts = []
   
   posts.value = mockPosts.map(post => ({
     ...post,
@@ -853,7 +796,7 @@ const emit = defineEmits(['needLogin'])
 .empty-state-title {
   font-size: 16px;
   font-weight: 600;
-  color: #374151;
+  color: #888888;
   margin: 0 0 8px 0;
 }
 

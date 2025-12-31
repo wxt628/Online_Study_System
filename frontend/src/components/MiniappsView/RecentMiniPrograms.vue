@@ -26,6 +26,8 @@
         <i class="fas fa-clock"></i>
         <p>暂无最近使用记录</p>
       </div>
+
+      <ModalShow v-model="currentProgram" />
     </div>
   </section>
 </template>
@@ -34,9 +36,11 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 import { useMiniAppsStore } from '../../stores/miniApps'
+import ModalShow from '../common/ModalShow.vue'
 
 const authStore = useAuthStore()
 const miniAppsStore = useMiniAppsStore()
+const currentProgram = ref(null)
 
 // 计算属性
 const recentPrograms = computed(() => {
@@ -60,6 +64,8 @@ const getIconColor = (programId) => {
 
 const openMiniProgram = (program) => {
   // 记录最近使用
+  console.log(program)
+  currentProgram.value = program
   miniAppsStore.addRecentUse(program.program_id)
   emit('open-program', program)
 }
