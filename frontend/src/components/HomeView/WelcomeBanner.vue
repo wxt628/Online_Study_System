@@ -1,38 +1,7 @@
-<!-- WelcomeBanner.vue -->
-<template>
-  <section class="welcome-banner">
-    <div class="welcome-content">
-      <h1>{{ welcomeText }}</h1>
-      <p>{{ welcomeDescription }}</p>
-    </div>
-    <div class="welcome-stats">
-      <div class="stat-item">
-        <i class="fas fa-th-large"></i>
-        <div>
-          <span class="stat-number">{{ stats.miniPrograms }}</span>
-          <span class="stat-label">个小程序</span>
-        </div>
-      </div>
-      <div class="stat-item">
-        <i class="fas fa-tasks"></i>
-        <div>
-          <span class="stat-number">{{ stats.assignments }}</span>
-          <span class="stat-label">个待办作业</span>
-        </div>
-      </div>
-      <div class="stat-item">
-        <i class="fas fa-comments"></i>
-        <div>
-          <span class="stat-number">{{ stats.posts }}</span>
-          <span class="stat-label">条新帖子</span>
-        </div>
-      </div>
-    </div>
-  </section>
-</template>
-
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
+import api from '../../api/config'
+import { getMiniProgram, getCourses, getCourseAssignments, getAssignmentSubmissions } from '../../api/interface'
 import { useAuthStore } from '../../stores/auth'
 
 const authStore = useAuthStore()
@@ -54,13 +23,126 @@ const props = defineProps({
   }
 })
 
+const stats = ref({ ...props.stats })
+
 const welcomeText = computed(() => {
   if (user.value) {
     return `欢迎回来，${user.value.name}同学`
   }
   return '欢迎使用校园综合平台'
 })
+
+// 获取小程序数量
+const fetchMiniProgramsCount = async () => {
+  try {
+    const res = await getMiniProgram({})
+    return Array.isArray(res.data) ? res.data.length : props.stats.miniPrograms
+  } catch (e) {
+    console.error('Failed to fetch mini programs count', e)
+    return props.stats.miniPrograms
+  }
+}
+
+// 获取帖子总数
+const fetchPostsCount = async () => {
+  try {
+    const res = await api.post('/posts/search', { pageSize: 1 })
+    return res.data?.data?.pagination?.total ?? props.stats.posts
+  } catch (e) {
+    console.error('Failed to fetch posts count', e)
+    return props.stats.posts
+  }
+}
+
+// 获取未提交且未过期的作业数量
+const fetchAssignmentsCount = async () => {
+  try {
+    // 1. 获取所有课程
+    const coursesRes = await getCourses()
+    const courses = Array.isArray(coursesRes.data) ? coursesRes.data : []
+    
+    if (courses.length === 0) return 0
+
+    // 2. 获取所有课程的作业
+    const assignmentsRes = await Promise.all(
+      courses.map(c => getCourseAssignments(c.course_id).catch(() => ({ data: [] })))
+    )
+    
+    const allAssignments = assignmentsRes.flatMap(r => Array.isArray(r.data) ? r.data : [])
+    
+    if (allAssignments.length === 0) return 0
+
+    // 3. 获取作业提交状态
+    const submissionPromises = allAssignments.map(a => 
+      getAssignmentSubmissions(a.assignment_id).catch(() => ({ data: [] }))
+    )
+    const submissionsRes = await Promise.all(submissionPromises)
+    
+    let count = 0
+    const now = new Date()
+    
+    allAssignments.forEach((assignment, idx) => {
+      const submissions = Array.isArray(submissionsRes[idx].data) ? submissionsRes[idx].data : []
+      const isSubmitted = submissions.length > 0
+      const deadline = new Date(assignment.deadline)
+      
+      // 未提交且截止日期在当前时间之后
+      if (!isSubmitted && deadline > now) {
+        count++
+      }
+    })
+    
+    return count
+  } catch (e) {
+    console.error('Failed to fetch assignments count', e)
+    return props.stats.assignments
+  }
+}
+
+onMounted(async () => {
+  if (!authStore.isAuthenticated) return
+
+  const [miniProgramsCount, postsCount, assignmentsCount] = await Promise.all([
+    fetchMiniProgramsCount(),
+    fetchPostsCount(),
+    fetchAssignmentsCount()
+  ])
+
+  stats.value = {
+    miniPrograms: miniProgramsCount,
+    assignments: assignmentsCount,
+    posts: postsCount
+  }
+})
 </script>
+
+<template>
+  <div class="welcome-banner">
+    <div class="welcome-content">
+      <h1>{{ welcomeText }}</h1>
+      <p>{{ welcomeDescription }}</p>
+      
+      <div class="welcome-stats">
+        <div class="stat-item">
+          <span class="stat-value">{{ stats.miniPrograms }}</span>
+          <span class="stat-label">小程序</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">{{ stats.assignments }}</span>
+          <span class="stat-label">待办作业</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">{{ stats.posts }}</span>
+          <span class="stat-label">社区动态</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="welcome-image">
+      <img src="../../assets/welcome-illustration.svg" alt="Welcome" />
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .welcome-banner {
@@ -92,63 +174,36 @@ const welcomeText = computed(() => {
 
 .stat-item {
   display: flex;
-  align-items: center;
-  gap: 15px;
+  flex-direction: column;
 }
 
-.stat-item i {
-  font-size: 2.5rem;
-  opacity: 0.9;
-}
-
-.stat-number {
-  font-size: 2rem;
-  font-weight: 700;
-  display: block;
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: bold;
 }
 
 .stat-label {
   font-size: 0.9rem;
-  opacity: 0.8;
+  opacity: 0.9;
 }
 
-/* 响应式设计 */
-@media (max-width: 992px) {
-  .welcome-banner {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .welcome-stats {
-    width: 100%;
-    justify-content: space-between;
-    margin-top: 25px;
-  }
+.welcome-image img {
+  max-width: 300px;
+  height: auto;
 }
 
 @media (max-width: 768px) {
-  .welcome-content h1 {
-    font-size: 1.8rem;
-  }
-  
-  .stat-item {
+  .welcome-banner {
     flex-direction: column;
     text-align: center;
-    gap: 10px;
   }
   
-  .stat-item i {
-    font-size: 2rem;
+  .welcome-stats {
+    justify-content: center;
   }
   
-  .stat-number {
-    font-size: 1.5rem;
-  }
-}
-
-@media (max-width: 576px) {
-  .welcome-banner {
-    padding: 20px;
+  .welcome-image {
+    margin-top: 20px;
   }
 }
 </style>
