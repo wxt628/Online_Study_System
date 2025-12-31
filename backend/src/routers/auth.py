@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import hashlib
 import secrets
 from src import database
-from src.schemas.auth import LoginRequest, LoginResponse, RegisterRequest
+from src.schemas.auth import LoginRequest, LoginResponse, RegisterRequest, ResetPasswordRequest
 from src.security import create_access_token
 from src.dependencies import get_db
 
@@ -85,3 +85,26 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
 	db.refresh(user)
 	token = create_access_token(data={"sub": str(user.student_id)})
 	return LoginResponse(token=token, user_id=user.user_id, student_id=user.student_id)
+
+@router.post("/auth/reset-password")
+def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db)):
+	user = db.query(database.User).filter(database.User.student_id == payload.student_id).first()
+	if not user:
+		raise HTTPException(status_code=404, detail={"error": {"code": "USER_NOT_FOUND", "message": "用户不存在"}})
+	
+	if user.phone != payload.phone:
+		raise HTTPException(status_code=403, detail={"error": {"code": "PHONE_MISMATCH", "message": "手机号不匹配"}})
+
+	# Generate new salt and hash
+	salt = secrets.token_hex(16)
+	password_hash = hashlib.sha256((salt + payload.new_password).encode('utf-8')).hexdigest()
+	
+	user.salt = salt
+	user.password_hash = password_hash
+	# Reset lock status as well since password is reset
+	user.failed_attempts = 0
+	user.locked_until = None
+	
+	db.commit()
+	
+	return {"code": 200, "message": "密码重置成功"}

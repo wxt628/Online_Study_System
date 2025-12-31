@@ -56,7 +56,7 @@
         <div class="post-content">
           <div class="post-header">
             <div class="post-title">{{ post.title }}</div>
-            <div :class="['post-category', 'category-' + post.category.toLowerCase()]">
+            <div :class="['badge', 'category-' + post.category.toLowerCase()]">
               {{ post.category }}
             </div>
           </div>
@@ -707,25 +707,7 @@ const emit = defineEmits(['needLogin'])
 }
 
 /* 分类颜色（从 ForumView.vue 复制） */
-.category-教务 {
-  background-color: #0891b2;
-}
-
-.category-生活 {
-  background-color: #d97706;
-}
-
-.category-工具 {
-  background-color: #059669;
-}
-
-.category-健康 {
-  background-color: #dc2626;
-}
-
-.category-娱乐 {
-  background-color: #7c3aed;
-}
+/* 分类颜色统一到全局样式 */
 
 /* 加载状态 */
 .loading-state {

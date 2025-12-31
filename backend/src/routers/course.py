@@ -110,6 +110,28 @@ def get_assignment(
         created_at=str(x.created_at) if x.created_at else None
     )
 
+@router.get("/assignments/{assignment_id}/submissions", response_model=list[SubmissionOut])
+def get_assignment_submissions(
+	assignment_id: int,
+	current_user: database.User = Depends(get_current_user),
+	db: Session = Depends(get_db)
+):
+	# 暂时只返回当前用户的提交记录，如果是教师或管理员可能需要返回所有
+	submissions = db.query(database.Submission).filter(
+		database.Submission.assignment_id == assignment_id,
+		database.Submission.user_id == current_user.user_id
+	).all()
+	
+	return [SubmissionOut(
+		submission_id=x.submission_id,
+		assignment_id=x.assignment_id,
+		user_id=x.user_id,
+		file_url=x.file_url,
+		submitted_at=x.submitted_at,
+		score=x.score,
+		feedback=x.feedback,
+		comment=x.comment
+	) for x in submissions]
 @router.post(
 	"/assignments/{assignment_id}/submit",
 	response_model=SubmissionOut
@@ -152,5 +174,6 @@ def submit_assignment(
 		file_url=submission.file_url,
 		submitted_at=submission.submitted_at,
 		score=submission.score,
-		feedback=submission.feedback
+		feedback=submission.feedback,
+		comment=submission.comment
 	)

@@ -1,14 +1,21 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
+import LoginView from '../views/LoginView.vue'
 import { useAuthStore } from '../stores/auth'
 import { showToast } from '../api/Toast'
 
 const routes = [
   {
+    path: '/login',
+    name: 'login',
+    component: LoginView,
+    meta: { requiresAuth: false }
+  },
+  {
     path: '/',
     name: 'home',
     component: HomeView,
-    meta: { requiresAuth: false }
+    meta: { requiresAuth: true }
   },
   {
     path: '/miniapps',
@@ -47,10 +54,14 @@ router.beforeEach((to, from, next) => {
   
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     showToast('请登录！', 'error')
-    next({ name: 'home' })
-  } else {
-    next()
+    next({ name: 'login', query: { redirect: to.fullPath } })
+    return
   }
+  if (to.name === 'login' && authStore.isAuthenticated) {
+    next({ name: 'home' })
+    return
+  }
+  next()
 })
 
 export default router

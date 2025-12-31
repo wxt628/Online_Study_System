@@ -363,6 +363,86 @@ body {
     }
 }
 
+:root {
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --muted: #6b7280;
+    --border: #d1d5db;
+    --bg: #ffffff;
+}
+
+.btn {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: var(--bg);
+    color: #374151;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+}
+
+.btn-secondary {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.btn-secondary:hover {
+    background: #e5e7eb;
+}
+
+.btn-outline {
+    background: #ffffff;
+    border-color: var(--border);
+    color: #6b7280;
+}
+
+.btn-outline:hover {
+    border-color: #9ca3af;
+    background: #f9fafb;
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    padding: 8px;
+    border-radius: 6px;
+    color: var(--muted);
+}
+
+.btn-icon:hover {
+    background: #f3f4f6;
+}
+
+.badge {
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #ffffff;
+    white-space: nowrap;
+}
+
+.category-教务 { background-color: #0891b2; }
+.category-生活 { background-color: #d97706; }
+.category-工具 { background-color: #059669; }
+.category-健康 { background-color: #dc2626; }
+.category-娱乐 { background-color: #7c3aed; }
+
 @media (max-width: 768px) {
     .nav-links {
         display: none;

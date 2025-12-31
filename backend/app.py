@@ -9,6 +9,8 @@ app = FastAPI(title="Campus Platform API", version="1.0.0")
 
 allowed_origins: list[str] = [
     "http://localhost:5173",
+    "http://localhost:5175",
+    "http://localhost:5176",
     "http://127.0.0.1:5173",
     "http://172.28.172.81:5173",
     "http://172.31.68.164:5173",

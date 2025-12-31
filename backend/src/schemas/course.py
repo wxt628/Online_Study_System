@@ -12,10 +12,10 @@ class AssignmentOut(BaseModel):
 	assignment_id: int
 	course_id: int
 	title: str
-	description: str
-	attachment_url: str
-	deadline: str
-	created_at: str
+	description: str | None
+	attachment_url: str | None
+	deadline: str | None
+	created_at: str | None
 
 class SubmissionOut(BaseModel):
 	submission_id: int
@@ -23,5 +23,6 @@ class SubmissionOut(BaseModel):
 	user_id: int
 	file_url: str
 	submitted_at: datetime
-	score: int | None
+	score: float | None
 	feedback: str | None
+	comment: str | None

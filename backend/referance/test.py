@@ -73,7 +73,7 @@ app = FastAPI(title="成绩管理教学平台 API", version="1.0.0")
 # 允许CORS，前端本地开发端口5500
 app.add_middleware(
 	CORSMiddleware,
-	allow_origins=["http://127.0.0.1:5500", "http://localhost:5500"],
+	allow_origins=["http://127.0.0.1:5500", "http://localhost:5500", "http://localhost:5173", "http://localhost:5175", "http://localhost:5176"],
 	allow_credentials=True,
 	allow_methods=["*"],
 	allow_headers=["*"]

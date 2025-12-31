@@ -8,9 +8,9 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://172.31.68.181:5500',
+        target: 'http://localhost:8000',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '/api/v1')
+        // rewrite: (path) => path.replace(/^\/api/, '/api/v1') // 后端已有 /api/v1 前缀，不需要 rewrite 或者根据实际情况调整
       }
     }
   },

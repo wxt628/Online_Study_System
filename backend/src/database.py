@@ -73,10 +73,11 @@ class Submission(Base):
 	submission_id     = Column(Integer, primary_key=True, autoincrement=True)
 	assignment_id     = Column(Integer, ForeignKey('assignments.assignment_id'), nullable=False)
 	user_id           = Column(Integer, ForeignKey('users.user_id'), nullable=False)
-	file_url          = Column(String(255), nullable=False)
+	file_url          = Column(String(255), nullable=True)
 	submitted_at      = Column(DateTime, default=datetime.utcnow)
 	score             = Column(Float)
 	feedback          = Column(Text)
+	comment           = Column(Text)
 	assignment        = relationship("Assignment", back_populates="submissions")
 	user              = relationship("User", back_populates="submissions")
 

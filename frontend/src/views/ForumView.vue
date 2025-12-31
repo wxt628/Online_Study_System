@@ -11,7 +11,7 @@
         </div>
 
         <div class="header-right">
-          <button class="btn btn-new-post" @click="showCreatePost = true">
+          <button class="btn btn-primary" @click="showCreatePost = true">
             <span class="btn-icon">📝</span>
             发帖
           </button>
@@ -65,7 +65,7 @@
           <div class="post-detail-header">
             <div>
               <div class="post-meta">
-                <span :class="['post-category', 'category-' + selectedPost.category.toLowerCase()]">
+                <span :class="['badge', 'category-' + selectedPost.category.toLowerCase()]">
                   {{ selectedPost.category }}
                 </span>
                 <span class="post-time">{{ formatDate(selectedPost.created_at) }}</span>
@@ -288,7 +288,7 @@
               >
                 <div class="post-card-header">
                   <div class="post-card-meta">
-                    <span :class="['post-card-category', 'category-' + post.category.toLowerCase()]">
+                    <span :class="['badge', 'category-' + post.category.toLowerCase()]">
                       {{ post.category }}
                     </span>
                     <span class="post-card-time">{{ formatDate(post.created_at) }}</span>
@@ -339,7 +339,7 @@
                 class="post-grid-card"
               >
                 <div class="post-grid-header">
-                  <span :class="['post-grid-category', 'category-' + post.category.toLowerCase()]">
+                  <span :class="['badge', 'category-' + post.category.toLowerCase()]">
                     {{ post.category }}
                   </span>
                   <button
@@ -379,7 +379,7 @@
               <p class="empty-state-description">快来发布第一条帖子吧~</p>
               <button
                 @click="showCreatePost = true"
-                class="btn btn-new-post-empty"
+                class="btn btn-primary"
               >
                 立即发帖
               </button>
@@ -2085,25 +2085,7 @@ onMounted(() => {
 }
 
 /* 分类颜色 */
-.category-教务 {
-  background-color: #0891b2;
-}
-
-.category-生活 {
-  background-color: #d97706;
-}
-
-.category-工具 {
-  background-color: #059669;
-}
-
-.category-健康 {
-  background-color: #dc2626;
-}
-
-.category-娱乐 {
-  background-color: #7c3aed;
-}
+/* 分类颜色统一到全局样式 */
 
 /* 移动端导航 */
 .mobile-nav {

@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, Form, UploadFile, File
 from sqlalchemy.orm import Session
 from datetime import datetime
 from typing import Optional
+import hashlib
+import secrets
 from src import database
 from src import storage
 from src.schemas.user import UserInfomation
@@ -17,6 +19,8 @@ async def update_user(
 	phone: str = Form(None),
 	avatar: UploadFile | None = File(None),
 	avatar_url: str | None = Form(None),
+	old_password: str = Form(None),
+	new_password: str = Form(None),
 	current_user: database.User = Depends(get_current_user),
 	db: Session = Depends(get_db)
 ):
@@ -33,6 +37,19 @@ async def update_user(
 		if not p:
 			raise HTTPException(status_code=422, detail="手机号不能为空")
 		user.phone = p
+
+	# Handle password update
+	if old_password and new_password:
+		# Verify old password
+		current_hash = hashlib.sha256((user.salt + old_password).encode('utf-8')).hexdigest()
+		if current_hash != user.password_hash:
+			raise HTTPException(status_code=400, detail="旧密码错误")
+		
+		# Set new password
+		new_salt = secrets.token_hex(16)
+		new_hash = hashlib.sha256((new_salt + new_password).encode('utf-8')).hexdigest()
+		user.salt = new_salt
+		user.password_hash = new_hash
 
 	if avatar is not None:
 		# delete previous avatar file first if present

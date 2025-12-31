@@ -15,3 +15,8 @@ class RegisterRequest(BaseModel):
 	name: str
 	phone: str
 	email: str | None = None
+
+class ResetPasswordRequest(BaseModel):
+	student_id: str
+	phone: str
+	new_password: str

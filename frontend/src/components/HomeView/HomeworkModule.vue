@@ -32,64 +32,163 @@
     
     <!-- 作业列表 -->
     <div class="assignments-list">
-      <div 
-        v-for="assignment in sortedAssignments" 
-        :key="assignment.assignment_id" 
-        class="assignment-card"
-      >
-        <div class="assignment-header">
-          <h3>{{ assignment.title }}</h3>
-          <div class="assignment-meta">
-            <span class="course-name">{{ getCourseName(assignment.course_id) }}</span>
-            <span class="deadline" :class="{ 'urgent': isUrgent(assignment.deadline) }">
-              截止: {{ formatDate(assignment.deadline) }}
-            </span>
+      <div class="tabs">
+        <button 
+          :class="['tab-btn', { active: activeTab === 'unsubmitted' }]"
+          @click="activeTab = 'unsubmitted'"
+        >
+          未提交
+        </button>
+        <button 
+          :class="['tab-btn', { active: activeTab === 'submitted' }]"
+          @click="activeTab = 'submitted'"
+        >
+          已提交
+        </button>
+        <button 
+          :class="['tab-btn', { active: activeTab === 'expired' }]"
+          @click="activeTab = 'expired'"
+        >
+          已截止
+        </button>
+      </div>
+      
+      <!-- 未提交作业 -->
+      <div v-if="activeTab === 'unsubmitted'" class="assignments-group">
+        <div v-if="unsubmittedAssignments.length">
+          <div 
+            v-for="assignment in unsubmittedAssignments" 
+            :key="assignment.assignment_id" 
+            class="assignment-card"
+          >
+            <div class="assignment-header">
+              <h3>{{ assignment.title }}</h3>
+              <div class="assignment-meta">
+                <span class="course-name">{{ getCourseName(assignment.course_id) }}</span>
+                <span class="deadline" :class="{ 'urgent': isUrgent(assignment.deadline) }">
+                  截止: {{ formatDate(assignment.deadline) }}
+                </span>
+              </div>
+            </div>
+            
+            <div class="assignment-description">
+              {{ truncateText(assignment.description, 100) }}
+            </div>
+            
+            <div class="assignment-actions">
+              <button class="btn-details" @click="viewAssignmentDetails(assignment)">
+                <i class="fas fa-eye"></i> 查看详情
+              </button>
+              <button 
+                class="btn-download"
+                @click="downloadAttachment(assignment)"
+                v-if="assignment.attachment_url"
+              >
+                <i class="fas fa-download"></i> 下载附件
+              </button>
+              <button 
+                class="btn-submit"
+                @click="openSubmitModal(assignment)"
+              >
+                <i class="fas fa-upload"></i> 提交作业
+              </button>
+            </div>
           </div>
         </div>
-        
-        <div class="assignment-description">
-          {{ truncateText(assignment.description, 100) }}
-        </div>
-        
-        <div class="assignment-actions">
-          <button 
-            class="btn-details"
-            @click="viewAssignmentDetails(assignment)"
-          >
-            <i class="fas fa-eye"></i> 查看详情
-          </button>
-          
-          <button 
-            class="btn-download"
-            @click="downloadAttachment(assignment)"
-            v-if="assignment.attachment_url"
-          >
-            <i class="fas fa-download"></i> 下载附件
-          </button>
-          
-          <button 
-            class="btn-submit"
-            @click="openSubmitModal(assignment)"
-          >
-            <i class="fas fa-upload"></i> 提交作业
-          </button>
+        <div v-else class="empty-state">
+          <i class="fas fa-check-circle"></i>
+          <p>暂无未提交作业</p>
         </div>
       </div>
-      
-      <!-- 加载状态 -->
-      <div v-if="loading" class="loading-state">
-        <div class="skeleton-card" v-for="n in 3" :key="n"></div>
+
+      <!-- 已提交作业 -->
+      <div v-if="activeTab === 'submitted'" class="assignments-group">
+        <div v-if="submittedAssignments.length">
+          <div 
+            v-for="assignment in submittedAssignments" 
+            :key="assignment.assignment_id" 
+            class="assignment-card submitted"
+          >
+            <div class="assignment-header">
+              <h3>{{ assignment.title }}</h3>
+              <div class="assignment-meta">
+                <span class="course-name">{{ getCourseName(assignment.course_id) }}</span>
+                <span class="status-badge success">已提交</span>
+              </div>
+            </div>
+            <div class="assignment-actions">
+              <button class="btn-details" @click="viewAssignmentDetails(assignment)">
+                <i class="fas fa-eye"></i> 查看详情
+              </button>
+              <button 
+                class="btn-download"
+                @click="downloadAttachment(assignment)"
+                v-if="assignment.attachment_url"
+              >
+                <i class="fas fa-download"></i> 下载附件
+              </button>
+              <button class="btn-details" @click="openSubmissionsModal(assignment)">
+                <i class="fas fa-list"></i> 查看提交记录
+              </button>
+            </div>
+          </div>
+        </div>
+        <div v-else class="empty-state">
+          <i class="fas fa-inbox"></i>
+          <p>暂无已提交作业</p>
+        </div>
       </div>
-      
-      <!-- 空状态 -->
-      <div v-if="!loading && assignments.length === 0" class="empty-state">
-        <i class="fas fa-inbox"></i>
-        <p>暂无作业</p>
+
+      <!-- 已截止作业 -->
+      <div v-if="activeTab === 'expired'" class="assignments-group">
+        <div v-if="expiredAssignments.length">
+          <div 
+            v-for="assignment in expiredAssignments" 
+            :key="assignment.assignment_id" 
+            class="assignment-card expired"
+          >
+            <div class="assignment-header">
+              <h3>{{ assignment.title }}</h3>
+              <div class="assignment-meta">
+                <span class="course-name">{{ getCourseName(assignment.course_id) }}</span>
+                <span class="deadline urgent">
+                  截止: {{ formatDate(assignment.deadline) }}
+                </span>
+              </div>
+            </div>
+            <div class="assignment-actions">
+              <button class="btn-details" @click="viewAssignmentDetails(assignment)">
+                <i class="fas fa-eye"></i> 查看详情
+              </button>
+              <button 
+                class="btn-download"
+                @click="downloadAttachment(assignment)"
+                v-if="assignment.attachment_url"
+              >
+                <i class="fas fa-download"></i> 下载附件
+              </button>
+              <button class="btn-submit" disabled>
+                <i class="fas fa-ban"></i> 已截止
+              </button>
+              <button 
+                class="btn-details"
+                v-if="assignment.__submittedByMe"
+                @click="openSubmissionsModal(assignment)"
+              >
+                <i class="fas fa-list"></i> 查看提交记录
+              </button>
+            </div>
+          </div>
+        </div>
+        <div v-else class="empty-state">
+          <i class="fas fa-clock"></i>
+          <p>暂无已截止作业</p>
+        </div>
       </div>
     </div>
-
+    
     <!-- 作业详情模态框 -->
-    <div v-if="showDetailsModal" class="modal-overlay" @click="closeDetailsModal">
+    <div v-if="showDetailsModal && currentAssignment" class="modal-overlay" @click="closeDetailsModal">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
           <h3>{{ currentAssignment.title }}</h3>
@@ -132,6 +231,48 @@
       </div>
     </div>
 
+    <!-- 提交记录模态框 -->
+    <div v-if="showSubmissionsModal" class="modal-overlay" @click="closeSubmissionsModal">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>我的作业提交记录</h3>
+          <button class="modal-close" @click="closeSubmissionsModal">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="submissions-list">
+            <div v-if="currentSubmissions.length === 0" class="empty-state">
+              <i class="fas fa-inbox"></i>
+              <p>暂无提交记录</p>
+            </div>
+            <div 
+              v-for="s in currentSubmissions" 
+              :key="s.id || s.submission_id" 
+              class="submission-item"
+            >
+              <div>
+                <div>{{ formatDate(s.submitted_at || s.created_at) }}</div>
+                <div v-if="s.comment">{{ s.comment }}</div>
+              </div>
+              <div>
+                <button 
+                  class="btn-download" 
+                  v-if="s.file_url || s.attachment_url" 
+                  @click="downloadSubmission(s)"
+                >
+                  <i class="fas fa-download"></i> 下载已提交作业
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" @click="closeSubmissionsModal">关闭</button>
+        </div>
+      </div>
+    </div>
+
     <!-- 提交作业模态框 -->
     <div v-if="showSubmitModal" class="modal-overlay" @click="closeSubmitModal">
       <div class="modal-content" @click.stop>
@@ -151,6 +292,7 @@
                 ref="fileInput"
                 required
                 accept=".pdf,.doc,.docx,.zip,.rar,.txt"
+                @change="handleFileChange"
               >
             </div>
             <div class="form-group">
@@ -194,7 +336,8 @@ import {
   getCourses, 
   getCourseAssignments, 
   getAssignment, 
-  submitAssignment 
+  submitAssignment, 
+  getAssignmentSubmissions
 } from '../../api/interface'
 
 const authStore = useAuthStore()
@@ -220,6 +363,7 @@ const courses = ref([])
 const assignments = ref([])
 const loading = ref(false)
 const selectedCourseId = ref('')
+const activeTab = ref('unsubmitted')
 
 // 模态框相关
 const showDetailsModal = ref(false)
@@ -227,19 +371,26 @@ const showSubmitModal = ref(false)
 const currentAssignment = ref(null)
 const submitComment = ref('')
 const selectedFile = ref(null)
+const fileInput = ref(null)
 const submitting = ref(false)
 
 // 计算属性 - 按截止时间排序
-const sortedAssignments = computed(() => {
-  const sorted = [...assignments.value].sort((a, b) => {
-    return new Date(a.deadline) - new Date(b.deadline)
-  })
-  
-  if (props.limit && sorted.length > props.limit) {
-    return sorted.slice(0, props.limit)
-  }
-  
-  return sorted
+const unsubmittedAssignments = computed(() => {
+  return assignments.value
+    .filter(a => !isOverdue(a.deadline) && !a.__submittedByMe)
+    .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))
+})
+
+const submittedAssignments = computed(() => {
+  return assignments.value
+    .filter(a => a.__submittedByMe)
+    .sort((a, b) => new Date(b.deadline) - new Date(a.deadline))
+})
+
+const expiredAssignments = computed(() => {
+  return assignments.value
+    .filter(a => isOverdue(a.deadline) && !a.__submittedByMe)
+    .sort((a, b) => new Date(b.deadline) - new Date(a.deadline))
 })
 
 // 生命周期
@@ -253,9 +404,7 @@ const loadCourses = async () => {
     const response = await getCourses()
     if (response.status === 200) {
       courses.value = response.data
-      if (courses.value.length > 0) {
-        selectedCourseId.value = courses.value[0].course_id
-      }
+      selectedCourseId.value = props.showAll ? '' : (courses.value[0]?.course_id ?? '')
       loadAssignments()
     }
   } catch (err) {
@@ -269,18 +418,28 @@ const loadAssignments = async () => {
   
   try {
     if (selectedCourseId.value) {
-      // 加载指定课程的作业
+      // 如果选择了特定课程
       const response = await getCourseAssignments(selectedCourseId.value)
       if (response.status === 200) {
         assignments.value = response.data
+        await enrichSubmissionStatus()
       }
-    } else if (props.showAll) {
-      // 加载所有课程的作业（需要后端支持，这里简化为加载第一个课程的作业）
+    } else {
+      // 默认情况或选择了"所有课程"，获取所有课程的作业
+      // 注意：即使用户没有传递 showAll=true，如果下拉框选了"所有课程"，也应该显示所有
+      // 只有在初始化且没有 showAll 且有课程时，才会默认选中第一个课程（在 loadCourses 中处理）
+      // 但如果 loadCourses 中将 selectedCourseId 设为空，则此处会执行获取所有
+      
       if (courses.value.length > 0) {
-        const response = await getCourseAssignments(courses.value[0].course_id)
-        if (response.status === 200) {
-          assignments.value = response.data
-        }
+        const results = await Promise.all(
+          courses.value.map(c => getCourseAssignments(c.course_id))
+        )
+        assignments.value = results
+          .filter(r => r.status === 200)
+          .flatMap(r => r.data || [])
+        await enrichSubmissionStatus()
+      } else {
+        assignments.value = []
       }
     }
   } catch (err) {
@@ -299,7 +458,10 @@ const getCourseName = (courseId) => {
 const formatDate = (dateString) => {
   if (!dateString) return ''
   const date = new Date(dateString)
-  return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}/${m}/${d}`
 }
 
 const isUrgent = (deadline) => {
@@ -310,6 +472,12 @@ const isUrgent = (deadline) => {
   return diffHours < 48 && diffHours > 0 // 48小时内为紧急
 }
 
+const isOverdue = (deadline) => {
+  if (!deadline) return false
+  const now = new Date()
+  const deadlineDate = new Date(deadline)
+  return deadlineDate < now
+}
 const truncateText = (text, maxLength) => {
   if (!text) return ''
   return text.length > maxLength ? text.substring(0, maxLength) + '...' : text
@@ -342,15 +510,17 @@ const openSubmitModal = (assignment) => {
   currentAssignment.value = assignment
   submitComment.value = ''
   selectedFile.value = null
-  if (window.$refs && window.$refs.fileInput) {
-    window.$refs.fileInput.value = ''
+  if (fileInput.value) {
+    fileInput.value.value = ''
   }
   showSubmitModal.value = true
 }
 
 const closeSubmitModal = () => {
   showSubmitModal.value = false
-  currentAssignment.value = null
+  if (!showDetailsModal.value) {
+    currentAssignment.value = null
+  }
   submitting.value = false
 }
 
@@ -377,20 +547,84 @@ const formatFileSize = (bytes) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
+const submissionsByAssignment = ref({})
+const showSubmissionsModal = ref(false)
+const currentSubmissions = ref([])
+
+const enrichSubmissionStatus = async () => {
+  try {
+    const ids = assignments.value.map(a => a.assignment_id)
+    const results = await Promise.all(ids.map(id => getAssignmentSubmissions(id).catch(() => ({ status: 500, data: [] }))))
+    const userId = authStore.user?.user_id || authStore.user?.id || authStore.user?.student_id || authStore.user?.studentId
+    const dict = {}
+    assignments.value.forEach((a, idx) => {
+      const r = results[idx]
+      const list = r.status === 200 ? (r.data || []) : []
+      dict[a.assignment_id] = list
+      a.__submittedByMe = !!list.find(s => {
+        const sid = s.user_id || s.student_id || s.studentId
+        return userId && sid && String(sid) === String(userId)
+      })
+    })
+    submissionsByAssignment.value = dict
+  } catch (e) {
+    submissionsByAssignment.value = {}
+    assignments.value = assignments.value.map(a => ({ ...a, __submittedByMe: false }))
+  }
+}
+
+const openSubmissionsModal = async (assignment) => {
+  const list = submissionsByAssignment.value[assignment.assignment_id]
+  if (!list) {
+    try {
+      const r = await getAssignmentSubmissions(assignment.assignment_id)
+      currentSubmissions.value = r.status === 200 ? (r.data || []) : []
+    } catch {
+      currentSubmissions.value = []
+    }
+  } else {
+    currentSubmissions.value = list
+  }
+  showSubmissionsModal.value = true
+}
+
+const closeSubmissionsModal = () => {
+  showSubmissionsModal.value = false
+  currentSubmissions.value = []
+}
+
+const downloadSubmission = (s) => {
+  const url = s.file_url || s.attachment_url
+  if (!url) return
+  const link = document.createElement('a')
+  link.href = url
+  link.download = '我的作业提交'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
+const handleFileChange = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    selectedFile.value = file
+  } else {
+    selectedFile.value = null
+  }
+}
+
 const submit = async () => {
   if (!authStore.isAuthenticated) {
     showToast('请先登录', 'error')
     return
   }
   
-  const fileInput = document.getElementById('file')
-  if (!fileInput.files.length) {
+  if (!selectedFile.value) {
     showToast('请选择文件', 'error')
     return
   }
   
-  const file = fileInput.files[0]
-  selectedFile.value = file
+  const file = selectedFile.value
   
   submitting.value = true
   
@@ -406,6 +640,10 @@ const submit = async () => {
     if (response.status === 200) {
       showToast('作业提交成功', 'success')
       closeSubmitModal()
+      // 重新加载作业列表以更新状态
+      await loadAssignments()
+      // 自动切换到"已提交"标签页
+      activeTab.value = 'submitted'
     }
   } catch (err) {
     console.error('提交作业失败:', err)
@@ -473,6 +711,61 @@ const submit = async () => {
 .module-description {
   margin-bottom: 20px;
   color: #666;
+}
+
+/* 标签页样式 */
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.tab-btn {
+  padding: 8px 16px;
+  border: none;
+  background: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: #666;
+  transition: all 0.3s;
+}
+
+.tab-btn:hover {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.tab-btn.active {
+  background-color: #e3f2fd;
+  color: #2196f3;
+  font-weight: 600;
+}
+
+/* 状态徽章 */
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.status-badge.success {
+  background-color: #e8f5e9;
+  color: #4caf50;
+}
+
+/* 作业卡片样式调整 */
+.assignment-card.submitted {
+  border-left: 4px solid #4caf50;
+}
+
+.assignment-card.expired {
+  border-left: 4px solid #9e9e9e;
+  opacity: 0.8;
 }
 
 /* 课程选择器 */
@@ -774,7 +1067,27 @@ const submit = async () => {
   cursor: not-allowed;
 }
 
-/* 表单样式 */
+.section-title {
+  font-size: 1rem;
+  color: #2c3e50;
+  margin: 10px 0;
+}
+
+.submissions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.submission-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+}
+
 .form-group {
   margin-bottom: 20px;
 }
