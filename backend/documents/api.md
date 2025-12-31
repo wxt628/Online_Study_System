@@ -52,6 +52,11 @@
   - 参数：`category?`
   - 返回项字段：`program_id, name, icon_url, description, url, category, is_active, display_order, created_at`
   - 参考实现：`src/routers/mini_program.py`
+  
+- 查询列表（JSON）
+  - `POST /mini-programs/query`（需认证）
+  - 请求：`{ "category": "工具"? }`
+  - 返回：同 GET 接口
 
 ---
 
@@ -61,6 +66,11 @@
   - `GET /courses`（需认证）
   - 参数：`semester?`
   - 返回项：`course_id, course_code, name, teacher, semester`
+  
+- 查询课程（JSON）
+  - `POST /courses/query`（需认证）
+  - 请求：`{ "semester": "2024-秋"? }`
+  - 返回：同 GET 接口
 
 - 获取课程详情
   - `GET /courses/{course_id}`（需认证）
@@ -91,6 +101,11 @@
     - 基本字段：`post_id, title, content_preview, category, like_count, view_count, comment_count, created_at`
     - 嵌套 `author`：`{ user_id, student_id, name, avatar_url }`
   - 参考实现：`src/routers/post.py`
+  
+- 查询帖子列表（JSON）
+  - `POST /posts/search`（需认证）
+  - 请求：`{ "category"?: "教务", "sort_by"?: "created_at|like_count|view_count", "order"?: "asc|desc", "page"?: 1, "pageSize"?: 20 }`
+  - 返回：与 `GET /posts` 相同的结构
 
 - 获取帖子详情
   - `GET /posts/{post_id}`（需认证）
@@ -100,6 +115,11 @@
   - 评论项包含：`comment_id, post_id, user_id, student_id, name, avatar_url, content, parent_id, created_at, replies[...]`
   - 回复项包含：`comment_id, post_id, user_id, student_id, name, content, parent_id, created_at`
   - 性能：使用预加载避免 N+1 查询
+  
+- 获取帖子详情（JSON）
+  - `POST /posts/{post_id}/detail`（需认证）
+  - 请求：`{ "page"?: 1, "pageSize"?: 20 }`（用于评论分页）
+  - 返回：与 `GET /posts/{post_id}` 相同的结构
 
 - 发布帖子
   - `POST /posts`（需认证，`multipart/form-data`）
@@ -135,6 +155,11 @@
   - `GET /notifications`（需认证）
   - 参数：`page?`, `pageSize?`, `is_read?`
   - 返回：`items` + `pagination`
+  
+- 查询通知（JSON）
+  - `POST /notifications/query`（需认证）
+  - 请求：`{ "page"?: 1, "pageSize"?: 20, "is_read"?: true|false }`
+  - 返回：与 `GET /notifications` 相同的结构
 
 - 标记单条为已读
   - `PUT /notifications/{notification_id}/read`（需认证）
