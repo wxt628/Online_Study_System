@@ -164,5 +164,5 @@ CREATE TABLE post_likes (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='帖子点赞记录表';
 
-CREATE INDEX idx_user_id_likes ON post_likes(post_id);
+CREATE INDEX idx_post_id_likes ON post_likes(post_id);
 CREATE INDEX idx_user_id_likes ON post_likes(user_id);
