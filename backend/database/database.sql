@@ -12,7 +12,7 @@ CREATE TABLE users (
     locked_until          DATETIME        DEFAULT NULL                                              COMMENT '账户锁定截止时间',
     name                  VARCHAR(50)     NOT NULL                                                  COMMENT '姓名',
     email                 VARCHAR(100)    UNIQUE                                                    COMMENT '邮箱',
-    phone                 VARCHAR(20)                                                               COMMENT '手机号',
+    phone                 VARCHAR(20)     NOT NULL                                                  COMMENT '手机号',
     avatar_url            VARCHAR(255)    DEFAULT NULL                                              COMMENT '头像链接',
     created_at            DATETIME        DEFAULT CURRENT_TIMESTAMP                                 COMMENT '创建时间',
     updated_at            DATETIME        DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP     COMMENT '更新时间'
@@ -22,34 +22,21 @@ CREATE TABLE users (
 CREATE INDEX idx_student_id ON users(student_id);
 CREATE INDEX idx_email ON users(email);
 
--- 测试
-INSERT INTO users (student_id, salt, password_hash, name, email, phone, created_at, updated_at)
-VALUES (
-    '2023114514', 
-    'asdfghjkl', 
-    '9673a6a354baccfd04a0ac740c9c8471e61fce6252a330e6cc921347cb08400f', 
-    '张三', 
-    '2023114514@szu.edu.cn',
-		"19198101145",
-    NOW(), 
-    NOW()
-);
-
 -- 2. 小程序表
 CREATE TABLE mini_programs (
-    program_id INT PRIMARY KEY AUTO_INCREMENT COMMENT '小程序ID',
-    name VARCHAR(100) NOT NULL COMMENT '小程序名称',
-    icon_url VARCHAR(255) COMMENT '图标链接',
-    description TEXT COMMENT '描述',
-    url VARCHAR(255) NOT NULL COMMENT '跳转链接或路由',
-    category VARCHAR(50) DEFAULT '其他' COMMENT '分类',
-    is_active BOOLEAN DEFAULT TRUE COMMENT '是否启用',
-    display_order INT DEFAULT 0 COMMENT '显示顺序',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='小程序表';
+    program_id    INT         PRIMARY KEY AUTO_INCREMENT COMMENT '小程序ID',
+    name          VARCHAR(100)         NOT NULL          COMMENT '小程序名称',
+    icon_url      VARCHAR(255)                           COMMENT '图标链接',
+    description   TEXT                                   COMMENT '描述',
+    url           VARCHAR(255)         NOT NULL          COMMENT '跳转链接或路由',
+    category      VARCHAR(50) DEFAULT '其他'              COMMENT '分类',
+    is_active     BOOLEAN     DEFAULT TRUE               COMMENT '是否启用',
+    display_order INT         DEFAULT 0                  COMMENT '显示顺序',
+    created_at    DATETIME    DEFAULT CURRENT_TIMESTAMP  COMMENT '创建时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4                  COMMENT='小程序表';
 
 -- 索引
-CREATE INDEX idx_category ON mini_programs(category);
+CREATE INDEX idx_mini_program_category ON mini_programs(category);
 CREATE INDEX idx_is_active ON mini_programs(is_active);
 
 -- 3. 课程表
@@ -114,7 +101,7 @@ CREATE TABLE posts (
 
 -- 索引
 CREATE INDEX idx_user_id_posts ON posts(user_id);
-CREATE INDEX idx_category ON posts(category);
+CREATE INDEX idx_post_category ON posts(category);
 CREATE INDEX idx_created_at ON posts(created_at);
 
 -- 7. 评论表

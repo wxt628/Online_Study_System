@@ -582,13 +582,12 @@ const unreadCount = computed(() => (notifications.value ?? []).filter(n => !n.is
 const loadPosts = async () => {
   loading.value = true
   try {
-    const resp = await api.get('/posts', {
-      params: {
-        category: currentCategory.value,
-        sort_by: sortBy.value,
-        page: pagination.value.page,
-        page_size: pagination.value.pageSize
-      }
+    const resp = await api.post('/posts/search', {
+      category: currentCategory.value,
+      sort_by: sortBy.value,
+      order: 'desc',
+      page: pagination.value.page,
+      pageSize: pagination.value.pageSize
     })
 
     const data = resp.data.data
@@ -596,9 +595,9 @@ const loadPosts = async () => {
 
     pagination.value = {
       page: data.pagination?.page ?? 1,
-      pageSize: data.pagination?.page_size ?? pagination.value.pageSize,
+      pageSize: data.pagination?.pageSize ?? pagination.value.pageSize,
       total: data.pagination?.total ?? 0,
-      totalPages: data.pagination?.total_pages ?? 0
+      totalPages: data.pagination?.totalPages ?? 0
     }
   } catch (error) {
     console.error('Failed to load posts:', error)
@@ -610,7 +609,7 @@ const loadPosts = async () => {
 
 const loadPostDetail = async (postId) => {
   try {
-    const { data } = await api.get(`/posts/${postId}`)
+    const { data } = await api.post(`/posts/${postId}/detail`, { page: 1, pageSize: 20 })
     selectedPost.value = data.data?.post
     if (selectedPost.value) {
       loadComments(postId)
@@ -624,12 +623,7 @@ const loadPostDetail = async (postId) => {
 const loadComments = async (postId) => {
   try {
     // 根据后端代码，评论是包含在帖子详情接口中的
-    const { data } = await api.get(`/posts/${postId}`, {
-      params: {
-        page: 1,
-        pageSize: 20
-      }
-    })
+    const { data } = await api.post(`/posts/${postId}/detail`, { page: 1, pageSize: 20 })
     
     if (data.code === 200 && data.data) {
       comments.value = {
@@ -647,11 +641,9 @@ const loadComments = async (postId) => {
 
 const loadNotifications = async () => {
   try {
-    const { data } = await api.get('/notifications/', {
-      params: {
-        page: pagination.value.page,
-        pageSize: pagination.value.pageSize
-      }
+    const { data } = await api.post('/notifications/query', {
+      page: pagination.value.page,
+      pageSize: pagination.value.pageSize
     })
 
     const res = data.data

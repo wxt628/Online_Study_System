@@ -1,8 +1,9 @@
+import os
 from datetime import datetime
 from sqlalchemy import Boolean, Column, DateTime, Integer, String, Float, Text, ForeignKey, create_engine
 from sqlalchemy.orm import sessionmaker, relationship, declarative_base
 
-DATABASE_URL = "mysql+pymysql://thephix:123456@172.31.68.181:3306/campus_platform?charset=utf8mb4"
+DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://thephix:123456@127.0.0.1:3306/campus_platform?charset=utf8mb4")
 Base = declarative_base()
 
 # 用户表
@@ -16,7 +17,7 @@ class User(Base):
 	locked_until      = Column(DateTime, default=None)
 	name              = Column(String(50), nullable=False)
 	email             = Column(String(100), unique=True)
-	phone             = Column(String(20))
+	phone             = Column(String(20), nullable=False)
 	avatar_url        = Column(String(255))
 	created_at        = Column(DateTime, default=datetime.utcnow)
 	updated_at        = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

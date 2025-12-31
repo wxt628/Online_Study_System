@@ -37,8 +37,8 @@ export const logout = () => {
   return api.post('/auth/logout')
 }
 
-export const getMiniProgram = () => {
-  return api.get('/mini-programs').then((resp) => {
+export const getMiniProgram = (payload = {}) => {
+  return api.post('/mini-programs/query', payload).then((resp) => {
     if (resp?.data && resp.data.data) resp.data = resp.data.data
     return resp
   })

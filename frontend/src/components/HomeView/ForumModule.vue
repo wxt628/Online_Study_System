@@ -215,13 +215,12 @@ const loadPosts = async () => {
   loading.value = true
   
   try {
-    const resp = await api.get('/posts', {
-      params: {
-        category: currentCategory.value,
-        sort_by: sortBy.value,
-        page: 1,
-        page_size: props.limit || 10
-      }
+    const resp = await api.post('/posts/search', {
+      category: currentCategory.value,
+      sort_by: sortBy.value,
+      order: 'desc',
+      page: 1,
+      pageSize: props.limit || 10
     })
 
     const data = resp.data.data

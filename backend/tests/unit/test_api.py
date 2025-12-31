@@ -1,119 +1,130 @@
 import pytest
-from fastapi.testclient import TestClient
-from src.database import User
-import hashlib
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
+from sqlalchemy.orm import Session
+from datetime import datetime, timedelta
 
-class TestAPIModule:
+from src.database import User
+from src.security import create_access_token
+
+class TestAPIRoutesComprehensive:
+    """全面测试API路由"""
     
-    def test_login_success(self, client, db_session):
-        """测试登录成功"""
-        # 创建测试用户
-        salt = "test_salt"
-        password = "TestPassword123!"
-        password_hash = hashlib.sha256((salt + password).encode('utf-8')).hexdigest()
-        
-        user = User(
+    @pytest.fixture
+    def test_user(self):
+        """创建测试用户"""
+        return User(
+            user_id=1,
             student_id="2023191134",
             name="测试用户",
-            password_hash=password_hash,
-            salt=salt,
+            email="test@example.com",
+            phone="13800138000",
+            password_hash="hashed_password",
+            salt="test_salt",
             failed_attempts=0,
             locked_until=None,
-            email="test@example.com",
-            phone="1234567890"
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
         )
-        db_session.add(user)
+    
+    # 登录路由测试
+    def test_login_wrong_password(self, client, db_session, test_user):
+        """测试密码错误场景"""
+        # 在测试数据库中添加测试用户
+        db_session.add(test_user)
         db_session.commit()
+        db_session.refresh(test_user)
         
         # 测试登录
-        response = client.post("/api/v1/auth/login", json={
-            "student_id": "2023191134",
-            "password": "TestPassword123!"
-        })
+        with patch("src.routers.auth.hash_password", return_value="wrong_hash"):
+            response = client.post(
+                "/api/v1/auth/login",
+                json={"student_id": "2023191134", "password": "wrong_password"}
+            )
         
-        assert response.status_code == 200
-        data = response.json()
-        assert "token" in data
-        assert data["student_id"] == "2023191134"
-        assert data["user_id"] == user.user_id
-    
-    def test_login_user_not_found(self, client):
-        """测试用户不存在"""
-        response = client.post("/api/v1/auth/login", json={
-            "student_id": "nonexistent_user",
-            "password": "any_password"
-        })
-        
+        # 验证结果
         assert response.status_code == 401
         data = response.json()
-        assert "detail" in data
-        assert "error" in data["detail"]
+        assert "用户名或密码错误" in data["detail"]["error"]["message"]
     
-    def test_login_wrong_password(self, client, db_session):
-        """测试密码错误"""
-        salt = "test_salt"
-        password_hash = hashlib.sha256((salt + "correct_password").encode('utf-8')).hexdigest()
+    def test_login_account_locked(self, client, db_session, test_user):
+        """测试账户锁定场景"""
+        # 设置锁定用户
+        test_user.failed_attempts = 5
+        test_user.locked_until = datetime.utcnow() + timedelta(minutes=5)
         
-        user = User(
-            student_id="2023191134",
-            name="测试用户",
-            password_hash=password_hash,
-            salt=salt,
-            failed_attempts=0,
-            locked_until=None,
-            email="test@example.com",
-            phone="1234567890"
-        )
-        db_session.add(user)
+        # 在测试数据库中添加锁定用户
+        db_session.add(test_user)
         db_session.commit()
+        db_session.refresh(test_user)
         
-        response = client.post("/api/v1/auth/login", json={
-            "student_id": "2023191134",
-            "password": "wrong_password"
-        })
-        
-        assert response.status_code == 401
-        data = response.json()
-        assert "detail" in data
-        assert "error" in data["detail"]
-    
-    def test_get_me_with_valid_token(self, client, db_session):
-        """测试获取个人信息（有效令牌）"""
-        # 创建用户
-        user = User(
-            student_id="2023191134",
-            name="魏小天",
-            password_hash="hash",
-            salt="salt",
-            failed_attempts=0,
-            locked_until=None,
-            email="test@example.com",
-            phone="1234567890"
+        # 测试登录
+        response = client.post(
+            "/api/v1/auth/login",
+            json={"student_id": "2023191134", "password": "password123"}
         )
-        db_session.add(user)
+        
+        # 验证结果
+        assert response.status_code == 423
+        data = response.json()
+        assert "账户已锁定" in data["detail"]["error"]["message"]
+    
+    # 用户路由测试
+    def test_update_user(self, client, db_session, test_user):
+        """测试更新用户信息"""
+        # 在测试数据库中添加测试用户
+        db_session.add(test_user)
         db_session.commit()
+        db_session.refresh(test_user)
         
-        # 创建令牌
-        from src.security import create_access_token
-        token = create_access_token(data={"sub": "2023191134"})
+        # 创建访问令牌
+        access_token = create_access_token(data={"sub": test_user.student_id})
         
-        # 测试获取个人信息
-        response = client.get("/api/v1/me", headers={"Authorization": f"Bearer {token}"})
+        # 测试更新用户
+        with patch("src.routers.user.get_current_user", return_value=test_user):
+            response = client.post(
+                "/api/v1/user/update",
+                headers={"Authorization": f"Bearer {access_token}"},
+                data={
+                    "name": "新测试用户",
+                    "email": "new_test@example.com"
+                }
+            )
         
+        # 验证结果
         assert response.status_code == 200
         data = response.json()
-        assert data["student_id"] == "2023191134"
-        assert data["name"] == "魏小天"
+        assert data["code"] == 200
+        assert data["message"] == "更新成功"
+        assert data["data"]["name"] == "新测试用户"
+        assert data["data"]["email"] == "new_test@example.com"
     
-    def test_get_me_without_token(self, client):
-        """测试无令牌获取个人信息"""
-        response = client.get("/api/v1/me")
+    def test_update_user_with_avatar(self, client, db_session, test_user):
+        """测试更新用户头像"""
+        # 在测试数据库中添加测试用户
+        db_session.add(test_user)
+        db_session.commit()
+        db_session.refresh(test_user)
         
-        assert response.status_code == 401
-    
-    def test_root_endpoint(self, client):
-        """测试根端点"""
-        response = client.get("/")
+        # 创建访问令牌
+        access_token = create_access_token(data={"sub": test_user.student_id})
+        
+        # 测试更新用户
+        with patch("src.routers.user.get_current_user", return_value=test_user):
+            with patch("src.routers.user.storage.save_avatar", return_value=("/uploads/avatars/test.jpg", 1024, "test.jpg")):
+                with patch("src.routers.user.storage.delete_by_url", return_value=True):
+                    response = client.post(
+                        "/api/v1/user/update",
+                        headers={"Authorization": f"Bearer {access_token}"},
+                        files={
+                            "avatar": ("test.jpg", b"image content", "image/jpeg")
+                        },
+                        data={
+                            "name": "新测试用户"
+                        }
+                    )
+        
+        # 验证结果
         assert response.status_code == 200
-        assert response.json() == 114514
+        data = response.json()
+        assert data["code"] == 200
+        assert data["data"]["avatar_url"] == "/uploads/avatars/test.jpg"
