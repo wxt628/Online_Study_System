@@ -77,6 +77,7 @@ CREATE TABLE submissions (
     submitted_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '提交时间',
     score FLOAT COMMENT '成绩',
     feedback TEXT COMMENT '教师反馈',
+    comment TEXT COMMENT '学生留言',
     FOREIGN KEY (assignment_id) REFERENCES assignments(assignment_id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='作业提交表';

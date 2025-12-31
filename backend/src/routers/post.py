@@ -275,7 +275,7 @@ def get_post_detail(post_id: int, payload: dict = Body(None), _: database.User =
     }
 
 @router.post("/posts")
-def create_post(title: str = Form(...), content: str = Form(...), category: str | None = Form(None), current_user: database.User = Depends(get_current_user), db: Session = Depends(get_db)):
+def create_post(title: str = Form(..., max_length=200), content: str = Form(...), category: str | None = Form(None), current_user: database.User = Depends(get_current_user), db: Session = Depends(get_db)):
     p = database.Post(user_id=current_user.user_id, title=title, content=content, category=(category or '校园'))
     db.add(p)
     db.commit()

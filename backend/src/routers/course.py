@@ -154,8 +154,9 @@ def submit_assignment(
 	submission = database.Submission(
 		assignment_id=assignment_id,
 		user_id=current_user.user_id,
-		comment=comment, # This might be a bug in original code, but preserving it.
-		submitted_at=datetime.utcnow()
+		comment=comment,
+		submitted_at=datetime.utcnow(),
+		file_url="pending"
 	)
 	db.add(submission)
 	db.commit()
