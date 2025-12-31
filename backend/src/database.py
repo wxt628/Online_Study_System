@@ -17,7 +17,7 @@ class User(Base):
 	locked_until      = Column(DateTime, default=None)
 	name              = Column(String(50), nullable=False)
 	email             = Column(String(100), unique=True)
-	phone             = Column(String(20))
+	phone             = Column(String(20), nullable=False)
 	avatar_url        = Column(String(255))
 	created_at        = Column(DateTime, default=datetime.utcnow)
 	updated_at        = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
