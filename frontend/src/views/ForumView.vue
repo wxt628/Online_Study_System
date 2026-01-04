@@ -329,8 +329,8 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { 
-  Search, EditPen, Bell, ArrowLeft, View, ChatDotRound, 
-  Delete, Refresh, Grid, List, CollectionTag, UserFilled,
+  EditPen, Bell, View, ChatDotRound, 
+  Delete, Grid, List, UserFilled,
   School, House, Tools, FirstAidKit, VideoPlay, StarFilled, Clock, Star
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
@@ -855,6 +855,18 @@ onMounted(() => {
   margin-bottom: 12px;
 }
 
+.post-category-tag {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  height: 24px;
+  padding: 0 12px;
+  font-size: 12px;
+  border-radius: 12px;
+  color: white;
+  font-weight: 500;
+}
+
 .post-time-ago {
   font-size: 12px;
   color: #909399;
@@ -874,7 +886,7 @@ onMounted(() => {
   margin: 0 0 16px;
   line-height: 1.6;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

@@ -106,9 +106,8 @@ import { useAuthStore } from '../../stores/auth'
 import api from '../../api/config'
 import { 
   School, ArrowRight, UserFilled, Star, StarFilled, 
-  ChatDotRound, View, EditPen 
+  ChatDotRound, View 
 } from '@element-plus/icons-vue'
-import { ALargeSmall } from 'lucide-vue-next'
 
 const router = useRouter()
 const authStore = useAuthStore()

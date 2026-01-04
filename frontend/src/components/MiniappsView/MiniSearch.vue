@@ -44,7 +44,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import {
-  Search, List, House, Tools, FirstAidKit, VideoPlay, School
+  List
 } from '@element-plus/icons-vue'
 
 // 定义 props

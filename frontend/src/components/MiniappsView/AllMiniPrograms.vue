@@ -72,10 +72,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { 
-  Menu, Star, StarFilled, Right,
-  Calendar, TrendCharts, Reading, CreditCard, 
-  Flag, Search, Van, Tools, FirstAidKit, 
-  Message, MapLocation, Timer, Grid 
+  Menu, Star, StarFilled, Right
 } from '@element-plus/icons-vue'
 import { useAuthStore } from '../../stores/auth'
 import { useMiniAppsStore } from '../../stores/miniApps'
@@ -368,7 +365,7 @@ const toggleFavorite = (programId) => {
   color: #8c9bab;
   line-height: 1.5;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   height: 2.8em;

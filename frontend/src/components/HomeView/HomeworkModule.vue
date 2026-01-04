@@ -200,7 +200,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 import { getCourses, getCourseAssignments, submitAssignment } from '../../api/interface'
 import { 
