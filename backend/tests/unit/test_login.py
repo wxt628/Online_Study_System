@@ -21,7 +21,8 @@ class TestLoginLogic:
             password_hash=password_hash,
             salt=salt,
             failed_attempts=0,
-            locked_until=None
+            locked_until=None,
+            phone="13800138000"
         )
         db_session.add(user)
         db_session.commit()
@@ -61,7 +62,8 @@ class TestLoginLogic:
             password_hash=password_hash,
             salt=salt,
             failed_attempts=0,
-            locked_until=None
+            locked_until=None,
+            phone="13800138000"
         )
         db_session.add(user)
         db_session.commit()
@@ -98,7 +100,8 @@ class TestLoginLogic:
             password_hash=password_hash,
             salt=salt,
             failed_attempts=5,  # 超过最大尝试次数
-            locked_until=locked_until
+            locked_until=locked_until,
+            phone="13800138000"
         )
         db_session.add(user)
         db_session.commit()
@@ -127,7 +130,8 @@ class TestLoginLogic:
             password_hash=wrong_password_hash,
             salt=salt,
             failed_attempts=0,
-            locked_until=None
+            locked_until=None,
+            phone="13800138000"
         )
         db_session.add(user)
         db_session.commit()

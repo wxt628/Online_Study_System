@@ -13,7 +13,6 @@ class TestAPIRoutesComprehensive:
     def test_user(self):
         """创建测试用户"""
         return User(
-            user_id=1,
             student_id="2023191134",
             name="测试用户",
             email="test@example.com",

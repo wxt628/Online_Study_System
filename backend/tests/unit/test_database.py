@@ -27,7 +27,8 @@ class TestDatabaseOperations:
             student_id="2023191134",
             name="测试用户1",
             password_hash="hash1",
-            salt="salt1"
+            salt="salt1",
+            phone="13800138000"
         )
         db_session.add(user1)
         db_session.commit()
@@ -37,7 +38,8 @@ class TestDatabaseOperations:
             student_id="2023191134",  # 相同的学号
             name="测试用户2",
             password_hash="hash2",
-            salt="salt2"
+            salt="salt2",
+            phone="13800138000"
         )
         db_session.add(user2)
         
@@ -52,7 +54,8 @@ class TestDatabaseOperations:
             student_id="2023191134",
             name="测试用户",
             password_hash="hash",
-            salt="salt"
+            salt="salt",
+            phone="13800138000"
         )
         db_session.add(user)
         db_session.commit()

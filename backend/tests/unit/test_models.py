@@ -54,7 +54,8 @@ class TestDatabaseModels:
             student_id="2023191134",
             name="魏小天",
             password_hash="hash",
-            salt="salt"
+            salt="salt",
+            phone="13800138000"
         )
         db_session.add(user)
         db_session.commit()
@@ -82,7 +83,8 @@ class TestDatabaseModels:
             student_id="2023191134",
             name="魏小天",
             password_hash="hash",
-            salt="salt"
+            salt="salt",
+            phone="13800138000"
         )
         db_session.add(user)
         db_session.commit()

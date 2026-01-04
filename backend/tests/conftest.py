@@ -13,11 +13,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # 首先创建测试数据库引擎和会话工厂
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 # 测试数据库配置（使用SQLite进行测试）
 TEST_DATABASE_URL = "sqlite:///:memory:"  # 内存数据库
 test_engine = create_engine(
-    TEST_DATABASE_URL, connect_args={"check_same_thread": False}
+    TEST_DATABASE_URL, 
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
 
@@ -34,11 +37,14 @@ from app import app
 from src.database import Base
 
 # 在模块级别创建表，确保所有测试都能使用
-Base.metadata.create_all(bind=test_engine)
+# Base.metadata.create_all(bind=test_engine)
 
 @pytest.fixture(scope="function")
 def db_session():
     """创建测试数据库会话"""
+    # 每个测试前创建表
+    Base.metadata.create_all(bind=test_engine)
+    
     connection = test_engine.connect()
     transaction = connection.begin()
     session = TestingSessionLocal(bind=connection)
@@ -54,6 +60,8 @@ def db_session():
     finally:
         session.close()
         connection.close()
+        # 每个测试后删除表
+        Base.metadata.drop_all(bind=test_engine)
 
 @pytest.fixture(scope="function")
 def client(db_session):
