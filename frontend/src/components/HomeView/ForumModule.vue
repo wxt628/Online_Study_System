@@ -19,7 +19,7 @@
     <div class="forum-controls">
       <el-row :gutter="20">
         <el-col :span="14" :xs="24">
-          <el-radio-group v-model="currentCategory" size="small" @change="loadPosts">
+          <el-radio-group v-model="currentCategory" size="small" @change="loadPosts" class="compact-radio-group">
             <el-radio-button :label="null">全部</el-radio-button>
             <el-radio-button 
               v-for="category in categories.filter(c => c.value)" 
@@ -108,6 +108,7 @@ import {
   School, ArrowRight, UserFilled, Star, StarFilled, 
   ChatDotRound, View, EditPen 
 } from '@element-plus/icons-vue'
+import { ALargeSmall } from 'lucide-vue-next'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -396,6 +397,12 @@ const getCategoryType = (category) => {
 .author-avatar {
   background-color: #f0f2f5;
   color: #909399;
+}
+
+.compact-radio-group :deep(.el-radio-button__inner) {
+  padding: 5px 11px;
+	width: 45px;
+  font-size: 12px;
 }
 
 .post-stats {

@@ -30,10 +30,10 @@
           />
         </el-col>
         <el-col :span="12" :xs="24">
-          <el-radio-group v-model="activeCategory" @change="filterByCategory">
-            <el-radio-button label="all">全部</el-radio-button>
+					<el-radio-group v-model="activeCategory" @change="filterByCategory">
+						<el-radio-button label="all">全部</el-radio-button>
             <el-radio-button v-for="category in categories" :key="category.value" :label="category.value">
-              {{ category.label }}
+							{{ category.label }}
             </el-radio-button>
           </el-radio-group>
         </el-col>
@@ -359,6 +359,8 @@ let searchTimer = null
   z-index: 1;
   padding: 20px;
   display: flex;
+	align-items: center;
+  justify-content: center;
   flex-direction: column;
   height: 100%;
   box-sizing: border-box;
@@ -376,8 +378,6 @@ let searchTimer = null
   height: 48px;
   border-radius: 14px;
   display: flex;
-  align-items: center;
-  justify-content: center;
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
   transition: transform 0.3s ease;
   margin-bottom: 0;
@@ -422,6 +422,7 @@ let searchTimer = null
   font-weight: 700;
   font-size: 1.05rem;
   color: #2c3e50;
+	width: 100px;
   margin-bottom: 6px;
 }
 
