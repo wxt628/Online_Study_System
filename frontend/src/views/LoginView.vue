@@ -1,80 +1,111 @@
 <template>
   <div class="login-container">
-    <div class="login-card">
-      <h1 class="login-title">{{ showReset ? '找回密码' : '登录' }}</h1>
+    <el-card class="login-card">
+      <template #header>
+        <h1 class="login-title">{{ showReset ? '找回密码' : '登录' }}</h1>
+      </template>
       
       <!-- Login Form -->
-      <form v-if="!showReset" class="login-form" @submit.prevent="onSubmit">
-        <div class="form-item">
-          <input
+      <el-form 
+        v-if="!showReset" 
+        class="login-form" 
+        label-position="top"
+        size="large"
+        @submit.prevent="onSubmit"
+      >
+        <el-form-item>
+          <el-input
             v-model="studentId"
-            class="form-input"
-            type="text"
             placeholder="学号"
-            required
+            :prefix-icon="User"
+            clearable
           />
-        </div>
-        <div class="form-item">
-          <input
+        </el-form-item>
+        <el-form-item>
+          <el-input
             v-model="password"
-            class="form-input"
             type="password"
             placeholder="密码"
-            required
+            :prefix-icon="Lock"
+            show-password
+            @keyup.enter="onSubmit"
           />
-        </div>
-        <button class="btn btn-primary login-button" :disabled="submitting">
+        </el-form-item>
+        
+        <el-button type="primary" class="login-button" :loading="submitting" @click="onSubmit">
           {{ submitting ? '登录中...' : '登录' }}
-        </button>
+        </el-button>
+        
         <div class="login-links">
-          <a href="#" class="link" @click.prevent="toggleReset">忘记密码？</a>
+          <el-link type="primary" @click.prevent="toggleReset">忘记密码？</el-link>
         </div>
-        <div v-if="errorMessage" class="login-error">
-          {{ errorMessage }}
-        </div>
-      </form>
+        
+        <el-alert
+          v-if="errorMessage"
+          :title="errorMessage"
+          type="error"
+          show-icon
+          :closable="false"
+          style="margin-top: 10px"
+        />
+      </el-form>
 
       <!-- Reset Password Form -->
-      <form v-else class="login-form" @submit.prevent="onReset">
-        <div class="form-item">
-          <input
+      <el-form 
+        v-else 
+        class="login-form" 
+        label-position="top"
+        size="large"
+        @submit.prevent="onReset"
+      >
+        <el-form-item>
+          <el-input
             v-model="resetStudentId"
-            class="form-input"
-            type="text"
             placeholder="学号"
-            required
+            :prefix-icon="User"
+            clearable
           />
-        </div>
-        <div class="form-item">
-          <input
+        </el-form-item>
+        <el-form-item>
+          <el-input
             v-model="resetPhone"
-            class="form-input"
-            type="text"
             placeholder="手机号"
-            required
+            :prefix-icon="Iphone"
+            clearable
           />
-        </div>
-        <button class="btn btn-primary login-button" :disabled="submitting">
+        </el-form-item>
+        
+        <el-button type="primary" class="login-button" :loading="submitting" @click="onReset">
           {{ submitting ? '处理中...' : '找回密码' }}
-        </button>
+        </el-button>
+        
         <div class="login-links">
-          <a href="#" class="link" @click.prevent="toggleReset">返回登录</a>
+          <el-link type="primary" @click.prevent="toggleReset">返回登录</el-link>
         </div>
-        <div v-if="errorMessage" class="login-error">
-          {{ errorMessage }}
-        </div>
-      </form>
-    </div>
+        
+        <el-alert
+          v-if="errorMessage"
+          :title="errorMessage"
+          type="error"
+          show-icon
+          :closable="false"
+          style="margin-top: 10px"
+        />
+      </el-form>
+    </el-card>
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { resetPassword } from '../api/interface'
+import { User, Lock, Iphone } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore()
 
 // Login State
@@ -96,13 +127,18 @@ const toggleReset = () => {
 }
 
 const onSubmit = async () => {
-  if (!studentId.value.trim() || !password.value.trim()) return
+  if (!studentId.value.trim() || !password.value.trim()) {
+    ElMessage.warning('请输入学号和密码')
+    return
+  }
   submitting.value = true
   errorMessage.value = ''
   const { success, error } = await auth.loginUser({ student_id: studentId.value, password: password.value })
   submitting.value = false
   if (success) {
-    router.replace({ name: 'home' })
+    ElMessage.success('登录成功')
+    const redirect = route.query.redirect || '/'
+    router.replace(redirect)
   } else {
     errorMessage.value = error || '登录失败'
   }
@@ -118,7 +154,10 @@ const generateRandomPassword = () => {
 }
 
 const onReset = async () => {
-  if (!resetStudentId.value.trim() || !resetPhone.value.trim()) return
+  if (!resetStudentId.value.trim() || !resetPhone.value.trim()) {
+    ElMessage.warning('请输入学号和手机号')
+    return
+  }
   submitting.value = true
   errorMessage.value = ''
   
@@ -131,10 +170,15 @@ const onReset = async () => {
       new_password: newPassword
     })
     console.log('新密码:', newPassword)
-    alert(`密码重置成功！\n新密码已输出到浏览器控制台 (F12)。\n新密码: ${newPassword}`)
-    showReset.value = false
-    // Pre-fill login with reset student id
-    studentId.value = resetStudentId.value
+    
+    ElMessageBox.alert(`密码重置成功！密码已通过短信发送至您的手机号。`, '重置成功', {
+      confirmButtonText: '确定',
+      dangerouslyUseHTMLString: true,
+      callback: () => {
+        showReset.value = false
+        studentId.value = resetStudentId.value
+      }
+    })
   } catch (err) {
     errorMessage.value = err.response?.data?.detail?.error?.message || '重置失败，请检查学号和手机号'
   } finally {
@@ -149,64 +193,25 @@ const onReset = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #f9fafb;
+  background-color: #f0f2f5;
 }
 .login-card {
   width: 100%;
-  max-width: 360px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  padding: 24px;
+  max-width: 400px;
 }
 .login-title {
   font-size: 20px;
   font-weight: 600;
-  color: #111827;
+  color: #303133;
   text-align: center;
-  margin-bottom: 16px;
-}
-.login-form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.form-item {
-  display: flex;
-  flex-direction: column;
-}
-.form-input {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 14px;
-}
-.form-input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  margin: 0;
 }
 .login-button {
   width: 100%;
-}
-.login-error {
-  margin-top: 8px;
-  color: #ef4444;
-  font-size: 13px;
-  text-align: center;
+  margin-top: 10px;
 }
 .login-links {
-  margin-top: 8px;
+  margin-top: 16px;
   text-align: center;
-}
-.link {
-  color: #2563eb;
-  text-decoration: none;
-  font-size: 13px;
-}
-.link:hover {
-  color: #1d4ed8;
 }
 </style>

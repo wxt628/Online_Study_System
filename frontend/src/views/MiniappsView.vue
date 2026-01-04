@@ -1,6 +1,6 @@
 <template>
-  <main class="container">
-    <section>
+  <div class="miniapps-container">
+    <div class="section-wrapper">
       <MiniSearch 
         :searchKeyword="miniAppsStore.searchKeyword"
         :activeCategory="miniAppsStore.activeCategory"
@@ -9,18 +9,27 @@
         @filter-category="handleFilterCategory"
         @sort-change="handleSortChange"
       />
-    </section>
+    </div>
     
-    <section>
+    <div class="section-wrapper">
       <FavoriteMiniPrograms 
         :favoritePrograms="favoriteProgramsComputed"
         @need-login="handleNeedLogin"
         @open-program="handleOpenProgram"
         @save-favorites="handleSaveFavorites"
       />
-    </section>
+    </div>
 
-    <section>
+    <div class="section-wrapper">
+      <RecentMiniPrograms 
+        :recentPrograms="recentProgramsComputed"
+        @need-login="handleNeedLogin"
+        @open-program="handleOpenProgram"
+        @recent-cleared="handleRecentCleared"
+      />
+    </div>
+
+    <div class="section-wrapper">
       <AllMiniPrograms 
         :searchKeyword="miniAppsStore.searchKeyword"
         :activeCategory="miniAppsStore.activeCategory"
@@ -30,26 +39,18 @@
         @open-program="handleOpenProgram"
         @favorite-changed="handleFavoriteChanged"
       />
-    </section>
-
-    <section>
-      <RecentMiniPrograms 
-        :recentPrograms="recentProgramsComputed"
-        @need-login="handleNeedLogin"
-        @open-program="handleOpenProgram"
-        @recent-cleared="handleRecentCleared"
-      />
-    </section>
-  </main>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useMiniAppsStore } from '../stores/miniApps'
 import MiniSearch from '../components/MiniappsView/MiniSearch.vue'
 import AllMiniPrograms from '../components/MiniappsView/AllMiniPrograms.vue'
 import FavoriteMiniPrograms from '../components/MiniappsView/FavoriteMiniPrograms.vue'
 import RecentMiniPrograms from '../components/MiniappsView/RecentMiniPrograms.vue'
+import { ElMessage } from 'element-plus'
 
 const miniAppsStore = useMiniAppsStore()
 
@@ -84,8 +85,7 @@ const handleSortChange = (sort) => {
 }
 
 const handleNeedLogin = () => {
-  // 触发登录逻辑
-  console.log('需要登录')
+  ElMessage.warning('请先登录')
 }
 
 const handleOpenProgram = (program) => {
@@ -96,15 +96,29 @@ const handleOpenProgram = (program) => {
 
 const handleFavoriteChanged = (programId, isFavorite) => {
   // 这个事件可以用于更新其他组件的状态
-  console.log(`小程序 ${programId} ${isFavorite ? '已收藏' : '取消收藏'}`)
+  const action = isFavorite ? '已收藏' : '取消收藏'
+  ElMessage.success(`小程序${action}`)
 }
 
 const handleSaveFavorites = (favorites) => {
-  // 这里可以保存到服务器
-  console.log('保存收藏:', favorites)
+  // 更新 store 中的收藏列表（保持顺序）
+  miniAppsStore.userFavorites = favorites
+  ElMessage.success('收藏列表已更新')
 }
 
 const handleRecentCleared = () => {
   miniAppsStore.clearRecent()
 }
 </script>
+
+<style scoped>
+.miniapps-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.section-wrapper {
+  margin-bottom: 24px;
+}
+</style>

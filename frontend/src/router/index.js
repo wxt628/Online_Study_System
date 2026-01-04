@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import LoginView from '../views/LoginView.vue'
 import { useAuthStore } from '../stores/auth'
-import { showToast } from '../api/Toast'
+import { ElMessage } from 'element-plus'
 
 const routes = [
   {
@@ -53,7 +53,7 @@ router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
   
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    showToast('请登录！', 'error')
+    ElMessage.error('请登录！')
     next({ name: 'login', query: { redirect: to.fullPath } })
     return
   }

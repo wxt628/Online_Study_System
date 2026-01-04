@@ -1,59 +1,51 @@
-<!-- MiniSearch.vue -->
 <template>
-  <div class="mini-search-section">
+  <div class="mini-search-card">
     <div class="search-container">
-      <div class="search-box">
-        <i class="fas fa-search"></i>
-        <input
-          type="text"
-          v-model="localSearchKeyword"
-          placeholder="搜索小程序..."
-          @input="handleSearchInput"
-        />
-        <button 
-          v-if="localSearchKeyword" 
-          class="clear-search-btn show"
-          @click="clearSearch"
-        >
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
+      <el-input
+        v-model="localSearchKeyword"
+        placeholder="搜索小程序..."
+        prefix-icon="Search"
+        clearable
+        @input="handleSearchInput"
+        @clear="clearSearch"
+        size="large"
+        class="search-input"
+      />
     </div>
     
     <div class="filter-container">
       <div class="category-filter">
-        <button 
-          v-for="category in categories" 
-          :key="category.value"
-          class="category-btn"
-          :class="{ active: localActiveCategory === category.value }"
-          @click="filterByCategory(category.value)"
-        >
-          <i :class="category.icon"></i> {{ category.label }}
-        </button>
-        <button 
-          class="category-btn"
-          :class="{ active: localActiveCategory === 'all' }"
-          @click="filterByCategory('all')"
-        >
-          <i class="fas fa-list"></i> 全部
-        </button>
+        <el-radio-group v-model="localActiveCategory" @change="handleCategoryChange">
+          <el-radio-button label="all">
+            <el-icon><List /></el-icon> 全部
+          </el-radio-button>
+          <el-radio-button 
+            v-for="category in categories" 
+            :key="category.value" 
+            :label="category.value"
+          >
+            <el-icon><component :is="category.iconComponent" /></el-icon> {{ category.label }}
+          </el-radio-button>
+        </el-radio-group>
       </div>
       
       <div class="sort-filter">
-        <select v-model="localActiveSort" @change="handleSortChange">
-          <option value="display_order">默认排序</option>
-          <option value="name">名称排序</option>
-          <option value="recent">最近使用</option>
-          <option value="popular">最受欢迎</option>
-        </select>
+        <el-select v-model="localActiveSort" @change="handleSortChange" placeholder="排序方式" style="width: 140px">
+          <el-option label="默认排序" value="display_order" />
+          <el-option label="名称排序" value="name" />
+          <el-option label="最近使用" value="recent" />
+          <el-option label="最受欢迎" value="popular" />
+        </el-select>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, watch, defineEmits, defineProps } from 'vue'
+import { ref, watch } from 'vue'
+import {
+  Search, List, House, Tools, FirstAidKit, VideoPlay, School
+} from '@element-plus/icons-vue'
 
 // 定义 props
 const props = defineProps({
@@ -78,11 +70,11 @@ const localActiveSort = ref(props.activeSort)
 
 // 分类选项
 const categories = ref([
-  { label: '教务', value: '教务', icon: 'fas fa-graduation-cap' },
-  { label: '生活', value: '生活', icon: 'fas fa-home' },
-  { label: '工具', value: '工具', icon: 'fas fa-tools' },
-  { label: '健康', value: '健康', icon: 'fas fa-heartbeat' },
-  { label: '娱乐', value: '娱乐', icon: 'fas fa-gamepad' }
+  { label: '教务', value: '教务', iconComponent: 'School' },
+  { label: '生活', value: '生活', iconComponent: 'House' },
+  { label: '工具', value: '工具', iconComponent: 'Tools' },
+  { label: '健康', value: '健康', iconComponent: 'FirstAidKit' },
+  { label: '娱乐', value: '娱乐', iconComponent: 'VideoPlay' }
 ])
 
 // 事件发射
@@ -92,10 +84,10 @@ const emit = defineEmits(['search', 'filter-category', 'sort-change'])
 let searchTimer = null
 
 // 方法
-const handleSearchInput = () => {
+const handleSearchInput = (value) => {
   clearTimeout(searchTimer)
   searchTimer = setTimeout(() => {
-    emit('search', localSearchKeyword.value)
+    emit('search', value)
   }, 300)
 }
 
@@ -104,119 +96,49 @@ const clearSearch = () => {
   emit('search', '')
 }
 
-const filterByCategory = (category) => {
-  localActiveCategory.value = category
-  emit('filter-category', category)
+const handleCategoryChange = (value) => {
+  emit('filter-category', value)
 }
 
-const handleSortChange = () => {
-  emit('sort-change', localActiveSort.value)
+const handleSortChange = (value) => {
+  emit('sort-change', value)
 }
 
-// 监听props的变化，更新本地数据
+// 监听 props 变化
 watch(() => props.searchKeyword, (newVal) => {
   localSearchKeyword.value = newVal
 })
-
 watch(() => props.activeCategory, (newVal) => {
   localActiveCategory.value = newVal
 })
-
 watch(() => props.activeSort, (newVal) => {
   localActiveSort.value = newVal
 })
 </script>
 
 <style scoped>
-.mini-search-section {
-  background-color: #f5f7fa;
-  padding: 25px 0;
-  border-bottom: 1px solid #eee;
-  margin-bottom: 20px;
+.mini-search-card {
+  margin-bottom: 24px;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.02);
 }
 
 .search-container {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
-.search-box {
-  position: relative;
-  margin-bottom: 15px;
-}
-
-.search-box i {
-  position: absolute;
-  left: 20px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #aaa;
-  font-size: 1.1rem;
-}
-
-.search-box input {
-  width: 100%;
-  padding: 15px 20px 15px 50px;
-  border: 2px solid #e0e0e0;
+.search-input :deep(.el-input__wrapper) {
   border-radius: 12px;
-  font-size: 1rem;
-  transition: all 0.3s;
+  padding: 8px 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  border: 1px solid #e0e0e0;
 }
 
-.search-box input:focus {
-  outline: none;
-  border-color: #4CAF50;
-  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
-}
-
-.clear-search-btn {
-  position: absolute;
-  right: 50px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  color: #aaa;
-  cursor: pointer;
-  font-size: 1.1rem;
-  padding: 5px;
-  border-radius: 50%;
-  transition: all 0.3s;
-  display: none;
-}
-
-.clear-search-btn.show {
-  display: block;
-}
-
-.clear-search-btn:hover {
-  color: #666;
-  background-color: #f0f0f0;
-}
-
-.search-tips {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  font-size: 0.9rem;
-}
-
-.search-tips span {
-  color: #666;
-}
-
-.search-tag {
-  padding: 5px 12px;
-  background-color: #f0f2f5;
-  color: #555;
-  border-radius: 15px;
-  text-decoration: none;
-  transition: all 0.3s;
-}
-
-.search-tag:hover {
-  background-color: #e0e7ff;
-  color: #3498db;
+.search-input :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 1px #409eff inset;
 }
 
 .filter-container {
@@ -224,46 +146,34 @@ watch(() => props.activeSort, (newVal) => {
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 20px;
+  gap: 10px;
 }
 
 .category-filter {
   display: flex;
-  flex-wrap: wrap;
   gap: 10px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 5px; /* For scrollbar */
+  -webkit-overflow-scrolling: touch;
 }
 
-.category-btn {
-  padding: 8px 16px;
-  background-color: #f8f9fa;
-  border: 1px solid #e0e0e0;
-  border-radius: 20px;
-  font-size: 0.9rem;
-  cursor: pointer;
+.category-filter::-webkit-scrollbar {
+  height: 4px;
+}
+
+.category-filter::-webkit-scrollbar-thumb {
+  background: #dcdfe6;
+  border-radius: 2px;
+}
+
+.category-filter :deep(.el-radio-group) {
+  flex-wrap: nowrap;
   display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.3s;
 }
 
-.category-btn:hover {
-  background-color: #eef5ff;
-  border-color: #cce5ff;
-}
-
-.category-btn.active {
-  background-color: #4CAF50;
-  border-color: #4CAF50;
-  color: white;
-}
-
-.sort-filter select {
-  padding: 8px 15px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  background-color: white;
-  min-width: 120px;
+.sort-filter {
+  min-width: 140px;
 }
 
 @media (max-width: 768px) {
@@ -272,8 +182,8 @@ watch(() => props.activeSort, (newVal) => {
     align-items: stretch;
   }
   
-  .category-filter {
-    justify-content: center;
+  .sort-filter {
+    width: 100%;
   }
 }
 </style>

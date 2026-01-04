@@ -1,56 +1,82 @@
-<!-- AllMiniPrograms.vue -->
 <template>
   <section class="mini-list-section">
     <div class="section-header">
-      <h2><i class="fas fa-th-large"></i> 全部小程序</h2>
+      <h2><el-icon class="header-icon"><Menu /></el-icon> 全部小程序</h2>
       <div class="mini-count">
-        共 <span>{{ filteredPrograms.length }}</span> 个小程序
+        共 <span class="count-number">{{ filteredPrograms.length }}</span> 个小程序
       </div>
     </div>
     
-    <div class="mini-grid">
-      <div 
+    <el-row :gutter="24" v-loading="loading">
+      <el-col 
         v-for="program in filteredPrograms" 
         :key="program.program_id" 
-        class="mini-card"
-        :class="{ favorite: isProgramFavorited(program.program_id) }"
-        @click="openMiniProgram(program)"
+        :xs="24" :sm="12" :md="8" :lg="6"
+        class="mb-24"
       >
-        <div class="mini-icon" :style="{ backgroundColor: getIconColor(program.program_id) }">
-          <i :class="getProgramIcon(program.name)"></i>
-        </div>
-        <div class="mini-name">{{ program.name }}</div>
-        <div class="mini-category">{{ program.category }}</div>
-        <div class="mini-description">{{ program.description }}</div>
-        <button 
-          class="mini-favorite-btn"
-          :class="{ favorite: isProgramFavorited(program.program_id) }"
-          @click.stop="toggleFavorite(program.program_id)"
+        <div 
+          class="mini-card" 
+          @click="openMiniProgram(program)"
         >
-          <i class="fas fa-star"></i>
-        </button>
-      </div>
+          <div class="card-bg-decoration"></div>
+          <div class="mini-content">
+            <div class="mini-header">
+              <div class="mini-icon" :class="getCategoryClass(program.category)">
+                <el-icon :size="28" color="#fff">
+                  <component :is="getProgramIcon(program.name)" />
+                </el-icon>
+              </div>
+              <el-button 
+                class="mini-favorite-btn"
+                :class="{ 'is-active': isProgramFavorited(program.program_id) }"
+                circle
+                size="small"
+                @click.stop="toggleFavorite(program.program_id)"
+              >
+                <el-icon><StarFilled v-if="isProgramFavorited(program.program_id)" /><Star v-else /></el-icon>
+              </el-button>
+            </div>
+            
+            <div class="mini-body">
+              <div class="mini-name">{{ program.name }}</div>
+              <div class="mini-tags">
+                <span class="category-tag" :class="getCategoryClass(program.category)">{{ program.category }}</span>
+              </div>
+              <div class="mini-description" :title="program.description">{{ program.description }}</div>
+            </div>
+            
+            <div class="mini-footer">
+              <span class="enter-text">点击进入</span>
+              <el-icon class="enter-icon"><Right /></el-icon>
+            </div>
+          </div>
+        </div>
+      </el-col>
+    </el-row>
       
-      <!-- 加载状态 -->
-      <div v-if="loading" class="loading-mini">
-        <div class="loading-spinner"></div>
-        <p>正在加载小程序...</p>
-      </div>
-      
-      <!-- 空状态 -->
-      <div v-if="!loading && filteredPrograms.length === 0" class="no-results">
-        <i class="fas fa-search"></i>
-        <h3>未找到相关小程序</h3>
-        <p>请尝试其他搜索关键词或分类</p>
-      </div>
+    <!-- 空状态 -->
+    <el-empty 
+      v-if="!loading && filteredPrograms.length === 0" 
+      description="未找到相关小程序"
+      :image-size="160"
+    >
+      <template #extra>
+        <p class="empty-tip">请尝试其他搜索关键词或分类</p>
+      </template>
+    </el-empty>
 
-      <ModalShow v-model="currentProgram" />
-    </div>
+    <ModalShow v-model="currentProgram" />
   </section>
 </template>
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { 
+  Menu, Star, StarFilled, Right,
+  Calendar, TrendCharts, Reading, CreditCard, 
+  Flag, Search, Van, Tools, FirstAidKit, 
+  Message, MapLocation, Timer, Grid 
+} from '@element-plus/icons-vue'
 import { useAuthStore } from '../../stores/auth'
 import { useMiniAppsStore } from '../../stores/miniApps'
 import ModalShow from '../common/ModalShow.vue'
@@ -73,23 +99,13 @@ const props = defineProps({
     type: String,
     default: 'display_order'
   },
-  loading: {  // 添加loading属性
+  loading: {
     type: Boolean,
     default: false
   }
 })
 
-// 本地状态用于收藏，确保响应式更新
-const localFavorites = ref([...miniAppsStore.userFavorites])
-
-// 监听store中的收藏变化
-watch(
-  () => miniAppsStore.userFavorites,
-  (newFavorites) => {
-    localFavorites.value = [...newFavorites]
-  },
-  { deep: true }
-)
+const emit = defineEmits(['need-login', 'open-program', 'favorite-changed'])
 
 // 计算属性
 const filteredPrograms = computed(() => {
@@ -104,103 +120,71 @@ const filteredPrograms = computed(() => {
   if (props.searchKeyword) {
     const keyword = props.searchKeyword.toLowerCase()
     programs = programs.filter(p => 
-      p.name.toLowerCase().includes(keyword) ||
-      p.description.toLowerCase().includes(keyword) ||
-      p.category.toLowerCase().includes(keyword)
+      p.name.toLowerCase().includes(keyword) || 
+      p.description.toLowerCase().includes(keyword)
     )
   }
   
   // 排序
-  programs.sort((a, b) => {
-    switch (props.activeSort) {
-      case 'name':
-        return a.name.localeCompare(b.name)
-      case 'recent':
-        // 按最近使用时间排序
-        const aRecent = miniAppsStore.userRecentUse.find(item => item.program_id === a.program_id)
-        const bRecent = miniAppsStore.userRecentUse.find(item => item.program_id === b.program_id)
-        
-        if (!aRecent && !bRecent) return 0
-        if (!aRecent) return 1
-        if (!bRecent) return -1
-        
-        return new Date(bRecent.used_at) - new Date(aRecent.used_at)
-      case 'display_order':
-      default:
-        return a.display_order - b.display_order
+  return [...programs].sort((a, b) => {
+    if (props.activeSort === 'name') {
+      return a.name.localeCompare(b.name, 'zh-CN')
+    } else if (props.activeSort === 'popular') {
+      return b.program_id - a.program_id
+    } else if (props.activeSort === 'recent') {
+      return 0
     }
+    return a.display_order - b.display_order
   })
-  
-  return programs
 })
 
 // 方法
-const getIconColor = (programId) => {
-  const colors = [
-    '#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0',
-    '#118AB2', '#073B4C', '#EF476F', '#7209B7',
-    '#3A86FF', '#FB5607', '#8338EC', '#FF006E'
-  ]
-  return colors[programId % colors.length]
+const getCategoryClass = (category) => {
+  const map = {
+    '教务': 'cat-edu',
+    '生活': 'cat-life',
+    '工具': 'cat-tool',
+    '健康': 'cat-health',
+    '娱乐': 'cat-ent'
+  }
+  return map[category] || 'cat-other'
 }
 
 const getProgramIcon = (name) => {
-  const icons = {
-    '校园一卡通': 'fas fa-credit-card',
-    '图书馆查询': 'fas fa-book',
-    '课表查询': 'fas fa-calendar-alt',
-    '电费缴纳': 'fas fa-bolt',
-    '成绩查询': 'fas fa-chart-line',
-    '失物招领': 'fas fa-search',
-    '校园网充值': 'fas fa-wifi',
-    '教室预约': 'fas fa-door-closed',
-    '校园公告': 'fas fa-bullhorn',
-    '校园导航': 'fas fa-map-marked-alt',
-    '活动报名': 'fas fa-calendar-check',
-    '校车时刻': 'fas fa-bus-alt'
-  }
-  return icons[name] || 'fas fa-th-large'
+  if (name.includes('课表')) return 'Calendar'
+  if (name.includes('成绩')) return 'TrendCharts'
+  if (name.includes('图书')) return 'Reading'
+  if (name.includes('一卡通')) return 'CreditCard'
+  if (name.includes('活动')) return 'Flag'
+  if (name.includes('失物')) return 'Search'
+  if (name.includes('校车')) return 'Van'
+  if (name.includes('报修')) return 'Tools'
+  if (name.includes('健康')) return 'FirstAidKit'
+  if (name.includes('邮箱')) return 'Message'
+  if (name.includes('地图')) return 'MapLocation'
+  if (name.includes('考勤')) return 'Timer'
+  return 'Grid'
 }
 
 const isProgramFavorited = (programId) => {
-  return localFavorites.value.includes(programId)
+  return miniAppsStore.userFavorites.includes(programId)
+}
+
+const openMiniProgram = (program) => {
+  currentProgram.value = program
 }
 
 const toggleFavorite = (programId) => {
   if (!authStore.isAuthenticated) {
-    emit('needLogin')
+    emit('need-login')
     return
   }
   
-  // 调用store中的方法
   miniAppsStore.toggleFavorite(programId)
   
-  // 触发事件
-  const isFavorite = isProgramFavorited(programId)
-  emit('favorite-changed', programId, !isFavorite)
+  // 触发事件通知父组件
+  emit('favorite-changed', programId, isProgramFavorited(programId))
 }
-
-const openMiniProgram = (program) => {
-  if (!authStore.isAuthenticated) {
-    // 触发登录弹窗
-    showToast('请登录！', 'error')
-    return
-  }
-  
-  currentProgram.value = program
-  
-  // 记录最近使用
-  miniAppsStore.addRecentUse(program.program_id)
-  
-  // 打开小程序
-  emit('open-program', program)
-}
-
-// 事件发射
-const emit = defineEmits(['needLogin', 'open-program', 'favorite-changed'])
-
-// 需要导入 showToast 函数
-import { showToast } from '../../api/Toast'
 </script>
 
 <style scoped>
@@ -212,188 +196,224 @@ import { showToast } from '../../api/Toast'
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed #e0e0e0;
 }
 
 .section-header h2 {
-  font-size: 1.5rem;
-  color: #2c3e50;
+  font-size: 1.6rem;
+  color: #1a1a1a;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: -0.5px;
 }
 
-.section-header h2 i {
-  color: #4CAF50;
+.header-icon {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 8px;
+  border-radius: 12px;
+  font-size: 20px;
+  box-shadow: 0 4px 10px rgba(118, 75, 162, 0.3);
 }
 
 .mini-count {
-  color: #666;
+  color: #606266;
   font-size: 0.95rem;
+  background: #f5f7fa;
+  padding: 6px 16px;
+  border-radius: 20px;
 }
 
-.mini-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 25px;
+.count-number {
+  color: #764ba2;
+  font-weight: 800;
+  font-size: 1.1rem;
+  margin: 0 4px;
 }
 
+.mb-24 {
+  margin-bottom: 24px;
+}
+
+/* 卡片全新设计 */
 .mini-card {
-  background-color: white;
-  border-radius: 15px;
-  padding: 20px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s;
   position: relative;
+  height: 100%;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   cursor: pointer;
-  text-align: center;
-  border: 1px solid transparent;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
 }
 
 .mini-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-  border-color: #e0f7e9;
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
+  border-color: rgba(118, 75, 162, 0.1);
 }
 
-.mini-card.favorite {
-  border-color: #FFD700;
+.card-bg-decoration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 80px;
+  background: linear-gradient(180deg, rgba(245, 247, 250, 0.5) 0%, rgba(255, 255, 255, 0) 100%);
+  z-index: 0;
+}
+
+.mini-content {
+  position: relative;
+  z-index: 1;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.mini-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
 }
 
 .mini-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 15px;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 15px;
-  color: white;
-  font-size: 1.5rem;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
 }
 
-.mini-name {
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: #2c3e50;
-  font-size: 1rem;
-  line-height: 1.3;
+.mini-card:hover .mini-icon {
+  transform: scale(1.1) rotate(-5deg);
 }
 
-.mini-category {
-  font-size: 0.8rem;
-  color: #888;
-  background-color: #f5f5f5;
-  padding: 3px 10px;
-  border-radius: 12px;
-  display: inline-block;
-  margin-bottom: 10px;
-}
+/* 颜色分类系统 */
+.cat-edu { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); box-shadow: 0 8px 20px rgba(79, 172, 254, 0.3); }
+.cat-life { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); box-shadow: 0 8px 20px rgba(67, 233, 123, 0.3); }
+.cat-tool { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); box-shadow: 0 8px 20px rgba(118, 75, 162, 0.3); }
+.cat-health { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%); box-shadow: 0 8px 20px rgba(255, 154, 158, 0.3); }
+.cat-ent { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); box-shadow: 0 8px 20px rgba(252, 182, 159, 0.3); }
+.cat-other { background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); box-shadow: 0 8px 20px rgba(161, 140, 209, 0.3); }
 
-.mini-description {
-  font-size: 0.85rem;
-  color: #666;
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  min-height: 2.4em;
-}
+/* 文字颜色的辅助类，用于标签文字 */
+.category-tag.cat-edu { color: #0093E9; background: rgba(0, 147, 233, 0.1); box-shadow: none; }
+.category-tag.cat-life { color: #28C76F; background: rgba(40, 199, 111, 0.1); box-shadow: none; }
+.category-tag.cat-tool { color: #7367F0; background: rgba(115, 103, 240, 0.1); box-shadow: none; }
+.category-tag.cat-health { color: #FF9F43; background: rgba(255, 159, 67, 0.1); box-shadow: none; }
+.category-tag.cat-ent { color: #EA5455; background: rgba(234, 84, 85, 0.1); box-shadow: none; }
+.category-tag.cat-other { color: #A8A8A8; background: rgba(168, 168, 168, 0.1); box-shadow: none; }
 
 .mini-favorite-btn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: none;
   border: none;
-  color: #ddd;
-  cursor: pointer;
-  font-size: 1.1rem;
-  padding: 5px;
-  border-radius: 50%;
+  background: transparent;
+  color: #dcdfe6;
   transition: all 0.3s;
-  z-index: 10;
+  font-size: 1.2rem;
 }
 
 .mini-favorite-btn:hover {
-  color: #FFD700;
-  background-color: rgba(255, 215, 0, 0.1);
+  background: rgba(0, 0, 0, 0.05);
+  transform: scale(1.1);
+  color: #e6a23c;
 }
 
-.mini-favorite-btn.favorite {
-  color: #FFD700;
+.mini-favorite-btn.is-active {
+  color: #e6a23c;
 }
 
-.loading-mini {
-  grid-column: 1 / -1;
-  padding: 50px;
-  text-align: center;
-  color: #888;
+.mini-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #f0f0f0;
-  border-top: 4px solid #4CAF50;
-  border-radius: 50%;
-  margin: 0 auto 20px;
-  animation: spin 1s linear infinite;
+.mini-name {
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: #2c3e50;
+  margin-bottom: 8px;
+  line-height: 1.4;
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+.mini-tags {
+  margin-bottom: 12px;
 }
 
-.no-results {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: 50px;
-  color: #aaa;
+.category-tag {
+  font-size: 0.75rem;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+  display: inline-block;
 }
 
-.no-results i {
-  font-size: 3rem;
-  margin-bottom: 15px;
-  color: #ddd;
+.mini-description {
+  font-size: 0.9rem;
+  color: #8c9bab;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  height: 2.8em;
+  margin-bottom: 16px;
 }
 
-.no-results h3 {
-  font-size: 1.5rem;
-  margin-bottom: 10px;
-  color: #888;
+.mini-footer {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  color: #a0a0a0;
+  font-size: 0.85rem;
+  transition: all 0.3s;
 }
 
-@media (max-width: 768px) {
-  .mini-grid {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 20px;
-  }
-  
-  .section-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
+.enter-text {
+  opacity: 0;
+  transform: translateX(10px);
+  transition: all 0.3s;
+  margin-right: 4px;
+  font-weight: 500;
 }
 
-@media (max-width: 576px) {
-  .mini-grid {
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    gap: 15px;
-  }
-  
-  .mini-card {
-    padding: 15px;
-  }
-  
-  .mini-icon {
-    width: 50px;
-    height: 50px;
-    font-size: 1.3rem;
-  }
+.enter-icon {
+  transition: all 0.3s;
+}
+
+.mini-card:hover .mini-footer {
+  color: #764ba2;
+}
+
+.mini-card:hover .enter-text {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.mini-card:hover .enter-icon {
+  transform: translateX(4px);
+}
+
+.empty-tip {
+  color: #909399;
+  font-size: 1rem;
 }
 </style>

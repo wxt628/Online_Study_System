@@ -1,85 +1,112 @@
-<!-- FavoriteMiniPrograms.vue -->
 <template>
   <section class="my-mini-section">
     <div class="section-header">
-      <h2><i class="fas fa-star"></i> 我的小程序</h2>
-    </div>
-    <div class="my-mini-grid">
-      <div 
-        v-for="program in favoritePrograms" 
-        :key="program.program_id" 
-        class="mini-card"
-        @click="openMiniProgram(program)"
-      >
-        <div class="mini-icon" :style="{ backgroundColor: getIconColor(program.program_id) }">
-          <i :class="program.icon_fa || 'fa-th-large'"></i>
-        </div>
-        <div class="mini-name">{{ program.name }}</div>
-        <div class="mini-category">{{ program.category }}</div>
-        <button 
-          class="mini-favorite-btn favorite"
-          @click.stop="toggleFavorite(program.program_id)"
-        >
-          <i class="fas fa-star"></i>
-        </button>
-      </div>
-      
-      <!-- 空状态 -->
-      <div v-if="favoritePrograms.length === 0" class="empty-my-mini">
-        <i class="fas fa-plus-circle"></i>
-        <p>您还没有添加常用小程序</p>
-        <p>点击下方小程序右上角的 <i class="fas fa-star"></i> 可以添加到我的小程序</p>
-      </div>
+      <h2><el-icon><StarFilled /></el-icon> 我的小程序</h2>
+      <el-button v-if="favoritePrograms.length > 0" type="primary" link @click="openEditModal">
+        <el-icon><Edit /></el-icon> 编辑
+      </el-button>
     </div>
     
-    <Teleport to="body">
-      <!-- 编辑模态框 -->
-      <div v-if="showEditModal" class="modal show" @click.self="closeEditModal">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h2>编辑我的小程序</h2>
-            <button class="modal-close" @click="closeEditModal">&times;</button>
-          </div>
-          <div class="modal-body">
-            <div class="edit-mini-content">
-              <p>长按拖动调整顺序，点击 <i class="fas fa-times"></i> 移除</p>
-              <div class="edit-mini-list" ref="editList">
-                <div 
-                  v-for="program in favoritePrograms" 
-                  :key="program.program_id" 
-                  class="edit-mini-item"
-                  :data-program-id="program.program_id"
-                >
-                  <div class="edit-mini-icon" :style="{ backgroundColor: getIconColor(program.program_id) }">
-                    <i :class="program.icon_fa || 'fa-th-large'"></i>
-                  </div>
-                  <div class="edit-mini-info">
-                    <div class="edit-mini-name">{{ program.name }}</div>
-                    <div class="edit-mini-category">{{ program.category }}</div>
-                  </div>
-                  <button class="edit-mini-remove" @click="removeFromFavorites(program.program_id)">
-                    <i class="fas fa-times"></i>
-                  </button>
-                </div>
-              </div>
-              <div class="edit-mini-buttons">
-                <button class="btn btn-primary" @click="saveEdit">保存</button>
-                <button class="btn btn-secondary" @click="closeEditModal">取消</button>
-              </div>
+    <el-row :gutter="20">
+      <el-col 
+        v-for="program in favoritePrograms" 
+        :key="program.program_id" 
+        :xs="12" :sm="8" :md="6" :lg="4"
+        class="mb-20"
+      >
+        <div 
+          class="mini-card-small" 
+          @click="openMiniProgram(program)"
+        >
+          <div class="card-bg-decoration"></div>
+          <div class="mini-content-small">
+            <div class="mini-icon-small" :class="getCategoryClass(program.category)">
+              <el-icon :size="24" color="#fff">
+                <component :is="getProgramIcon(program.name)" />
+              </el-icon>
             </div>
+            <div class="mini-name-small">{{ program.name }}</div>
+          </div>
+        </div>
+      </el-col>
+      
+      <!-- 空状态 -->
+      <el-col :span="24" v-if="favoritePrograms.length === 0">
+        <el-empty description="您还没有添加常用小程序">
+          <template #extra>
+            <p>点击下方小程序右上角的 <el-icon><Star /></el-icon> 可以添加到我的小程序</p>
+          </template>
+        </el-empty>
+      </el-col>
+    </el-row>
+    
+    <!-- 编辑模态框 -->
+    <el-dialog
+      v-model="showEditModal"
+      title="编辑我的小程序"
+      width="500px"
+      destroy-on-close
+    >
+      <div class="edit-mini-content">
+        <el-alert
+          title="长按拖动调整顺序，点击 x 移除"
+          type="info"
+          show-icon
+          :closable="false"
+          class="mb-20"
+        />
+        <div class="edit-mini-list" ref="editListRef">
+          <div 
+            v-for="program in favoritePrograms" 
+            :key="program.program_id" 
+            class="edit-mini-item"
+            :data-program-id="program.program_id"
+          >
+            <div class="edit-mini-icon" :class="getCategoryClass(program.category)">
+              <el-icon :size="20" color="#fff">
+                <component :is="getProgramIcon(program.name)" />
+              </el-icon>
+            </div>
+            <div class="edit-mini-info">
+              <div class="edit-mini-name">{{ program.name }}</div>
+              <div class="edit-mini-category">{{ program.category }}</div>
+            </div>
+            <el-button 
+              type="danger" 
+              circle 
+              size="small" 
+              @click="removeFromFavorites(program.program_id)"
+            >
+              <el-icon><Close /></el-icon>
+            </el-button>
           </div>
         </div>
       </div>
-    </Teleport>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="closeEditModal">取消</el-button>
+          <el-button type="primary" @click="saveEdit">保存</el-button>
+        </span>
+      </template>
+    </el-dialog>
+
     <ModalShow v-model="currentProgram" />
   </section>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, nextTick } from 'vue'
+import { 
+  StarFilled, Star, Edit, Close,
+  Calendar, TrendCharts, Reading, CreditCard, 
+  Flag, Search, Van, Tools, FirstAidKit, 
+  Message, MapLocation, Timer, Grid,
+  House, Lightning
+} from '@element-plus/icons-vue'
 import { useAuthStore } from '../../stores/auth'
 import { useMiniAppsStore } from '../../stores/miniApps'
 import ModalShow from '../common/ModalShow.vue'
+import Sortable from 'sortablejs'
 
 const authStore = useAuthStore()
 const miniAppsStore = useMiniAppsStore()
@@ -96,67 +123,51 @@ const props = defineProps({
   }
 })
 
+// Emits
+const emit = defineEmits(['need-login', 'open-program', 'save-favorites'])
+
 // 方法
-const getIconColor = (programId) => {
-  const colors = [
-    '#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0',
-    '#118AB2', '#073B4C', '#EF476F', '#7209B7'
-  ]
-  return colors[programId % colors.length]
+const getCategoryClass = (category) => {
+  const map = {
+    '教务': 'cat-edu',
+    '生活': 'cat-life',
+    '工具': 'cat-tool',
+    '健康': 'cat-health',
+    '娱乐': 'cat-ent'
+  }
+  return map[category] || 'cat-other'
+}
+
+const getProgramIcon = (name) => {
+  if (name.includes('课表')) return Calendar
+  if (name.includes('成绩')) return TrendCharts
+  if (name.includes('图书')) return Reading
+  if (name.includes('一卡通')) return CreditCard
+  if (name.includes('失物')) return Search
+  if (name.includes('教室')) return House
+  
+  const icons = {
+    '校园一卡通': CreditCard,
+    '图书馆查询': Reading,
+    '课表查询': Calendar,
+    '电费缴纳': Lightning,
+    '成绩查询': TrendCharts,
+    '失物招领': Search,
+    '校园网充值': CreditCard,
+    '教室预约': House
+  }
+  return icons[name] || Grid
 }
 
 const openMiniProgram = (program) => {
-  // 记录最近使用
   currentProgram.value = program
-  miniAppsStore.addRecentUse(program.program_id)
   emit('open-program', program)
 }
 
-const toggleFavorite = (programId) => {
-  if (!authStore.isAuthenticated) {
-    emit('needLogin')
-    return
-  }
-  
-  // 调用store中的方法
-  miniAppsStore.toggleFavorite(programId)
-  
-  emit('favorite-changed', programId)
-}
-
-const openEditModal = () => {
-  if (!authStore.isAuthenticated) {
-    emit('needLogin')
-    return
-  }
-  
+const openEditModal = async () => {
   showEditModal.value = true
-  
-  // 初始化拖拽排序
-  nextTick(() => {
-    if (editListRef.value && window.Sortable) {
-      if (sortableInstance) {
-        sortableInstance.destroy()
-      }
-      
-      sortableInstance = new window.Sortable(editListRef.value, {
-        animation: 150,
-        ghostClass: 'sortable-ghost',
-        chosenClass: 'sortable-chosen',
-        dragClass: 'sortable-drag',
-        onEnd: (evt) => {
-          // 更新收藏顺序
-          const newOrder = []
-          const items = editListRef.value.querySelectorAll('.edit-mini-item')
-          items.forEach(item => {
-            newOrder.push(parseInt(item.dataset.programId))
-          })
-          
-          miniAppsStore.userFavorites = newOrder
-        }
-      })
-    }
-  })
+  await nextTick()
+  initSortable()
 }
 
 const closeEditModal = () => {
@@ -167,20 +178,35 @@ const closeEditModal = () => {
   }
 }
 
+const initSortable = () => {
+  if (!editListRef.value) return
+  
+  sortableInstance = new Sortable(editListRef.value, {
+    animation: 150,
+    ghostClass: 'sortable-ghost',
+    onEnd: (evt) => {
+      // 拖拽结束后的处理，这里不需要立即更新数据，等待保存按钮
+    }
+  })
+}
+
 const removeFromFavorites = (programId) => {
+  // 在模态框中移除，实际上是移除store中的收藏
   miniAppsStore.toggleFavorite(programId)
 }
 
 const saveEdit = () => {
-  // 保存到服务器（模拟）
-  console.log('保存收藏列表:', miniAppsStore.userFavorites)
+  // 获取排序后的ID列表
+  if (!editListRef.value) return
   
+  const items = editListRef.value.querySelectorAll('.edit-mini-item')
+  const newOrder = Array.from(items).map(item => parseInt(item.dataset.programId))
+  
+  // 更新store中的顺序（如果有这个功能的话，或者只是保存）
+  // 这里假设我们只是保存当前的收藏列表
+  emit('save-favorites', newOrder)
   closeEditModal()
-  emit('save-favorites', miniAppsStore.userFavorites)
 }
-
-// 事件发射
-const emit = defineEmits(['needLogin', 'open-program', 'favorite-changed', 'save-favorites'])
 </script>
 
 <style scoped>
@@ -193,212 +219,127 @@ const emit = defineEmits(['needLogin', 'open-program', 'favorite-changed', 'save
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
 }
 
 .section-header h2 {
   font-size: 1.5rem;
-  color: #2c3e50;
+  color: #333;
   display: flex;
   align-items: center;
   gap: 10px;
+  margin: 0;
 }
 
-.section-header h2 i {
-  color: #FFD700;
+.mb-20 {
+  margin-bottom: 20px;
 }
 
-.btn-edit {
-  padding: 8px 15px;
-  background-color: #f8f9fa;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.3s;
-}
-
-.btn-edit:hover {
-  background-color: #eef5ff;
-  border-color: #cce5ff;
-}
-
-.my-mini-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-  gap: 20px;
-  background-color: white;
-  border-radius: 15px;
-  padding: 25px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-  min-height: 180px;
-}
-
-.mini-card {
-  background-color: white;
-  border-radius: 15px;
-  padding: 20px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s;
+.mini-card-small {
   position: relative;
+  height: 100%;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   cursor: pointer;
-  text-align: center;
-  border: 1px solid #FFD700;
-}
-
-.mini-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-}
-
-.mini-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.02);
   display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 10px;
-  color: white;
-  font-size: 1.3rem;
+  flex-direction: column;
 }
 
-.mini-name {
-  font-weight: 600;
-  margin-bottom: 5px;
-  color: #2c3e50;
-  font-size: 0.9rem;
-  line-height: 1.3;
+.mini-card-small:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+  border-color: rgba(118, 75, 162, 0.1);
 }
 
-.mini-category {
-  font-size: 0.75rem;
-  color: #888;
-  background-color: #f5f5f5;
-  padding: 2px 8px;
-  border-radius: 10px;
-  display: inline-block;
-}
-
-.mini-favorite-btn {
+.card-bg-decoration {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  background: none;
-  border: none;
-  color: #FFD700;
-  cursor: pointer;
-  font-size: 1.1rem;
-  padding: 5px;
-  border-radius: 50%;
-  transition: all 0.3s;
-  z-index: 10;
-}
-
-.empty-my-mini {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: 30px;
-  color: #aaa;
-}
-
-.empty-my-mini i {
-  font-size: 3rem;
-  margin-bottom: 15px;
-  color: #ddd;
-}
-
-.empty-my-mini p {
-  margin-bottom: 10px;
-  font-size: 0.95rem;
-}
-
-/* 模态框样式 */
-.modal {
-  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  height: 40px;
+  background: linear-gradient(180deg, rgba(245, 247, 250, 0.8) 0%, rgba(255, 255, 255, 0) 100%);
+  z-index: 0;
+}
+
+.mini-content-small {
+  position: relative;
+  z-index: 1;
+  padding: 16px;
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.mini-icon-small {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
   justify-content: center;
-  align-items: center;
-  z-index: 2000;
+  margin-bottom: 10px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease;
 }
 
-.modal.show {
-  display: flex;
+.mini-card-small:hover .mini-icon-small {
+  transform: scale(1.1) rotate(-5deg);
 }
 
-.modal-content {
-  background-color: white;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 500px;
-  max-height: 90vh;
+.mini-name-small {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #333;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
 }
 
-.modal-header {
-  padding: 20px 25px;
-  border-bottom: 1px solid #eee;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+/* 颜色分类系统 */
+.cat-edu { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); box-shadow: 0 6px 15px rgba(79, 172, 254, 0.25); }
+.cat-life { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); box-shadow: 0 6px 15px rgba(67, 233, 123, 0.25); }
+.cat-tool { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); box-shadow: 0 6px 15px rgba(118, 75, 162, 0.25); }
+.cat-health { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%); box-shadow: 0 6px 15px rgba(255, 154, 158, 0.25); }
+.cat-ent { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); box-shadow: 0 6px 15px rgba(252, 182, 159, 0.25); }
+.cat-other { background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); box-shadow: 0 6px 15px rgba(161, 140, 209, 0.25); }
 
-.modal-header h2 {
-  font-size: 1.5rem;
-  color: #2c3e50;
-}
-
-.modal-close {
-  background: none;
-  border: none;
-  font-size: 1.8rem;
-  cursor: pointer;
-  color: #888;
-  line-height: 1;
-}
-
-.modal-body {
-  padding: 25px;
-  overflow-y: auto;
-}
-
-.edit-mini-content {
-  padding: 10px 0;
-}
-
+/* Edit List Styles */
 .edit-mini-list {
-  margin: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   max-height: 400px;
   overflow-y: auto;
-  padding: 10px;
-  background-color: #f8f9fa;
-  border-radius: 10px;
+  padding: 5px;
 }
 
 .edit-mini-item {
   display: flex;
   align-items: center;
-  gap: 15px;
-  padding: 15px;
-  background-color: white;
-  border-radius: 10px;
-  margin-bottom: 10px;
-  cursor: move;
-  user-select: none;
+  padding: 10px;
+  background-color: #fff;
   border: 1px solid #eee;
-  transition: all 0.3s;
+  border-radius: 12px;
+  cursor: grab;
+  transition: all 0.2s;
+}
+
+.edit-mini-item:active {
+  cursor: grabbing;
 }
 
 .edit-mini-item:hover {
-  border-color: #cce5ff;
-  background-color: #f8faff;
+  background-color: #f9f9f9;
+  border-color: #e0e0e0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
 
 .edit-mini-icon {
@@ -408,9 +349,8 @@ const emit = defineEmits(['needLogin', 'open-program', 'favorite-changed', 'save
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-size: 1.2rem;
-  flex-shrink: 0;
+  margin-right: 15px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
 .edit-mini-info {
@@ -419,8 +359,7 @@ const emit = defineEmits(['needLogin', 'open-program', 'favorite-changed', 'save
 
 .edit-mini-name {
   font-weight: 600;
-  margin-bottom: 3px;
-  color: #2c3e50;
+  color: #333;
 }
 
 .edit-mini-category {
@@ -428,69 +367,8 @@ const emit = defineEmits(['needLogin', 'open-program', 'favorite-changed', 'save
   color: #888;
 }
 
-.edit-mini-remove {
-  background: none;
-  border: none;
-  color: #ff6b6b;
-  cursor: pointer;
-  font-size: 1.2rem;
-  padding: 5px;
-  border-radius: 50%;
-  transition: all 0.3s;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.edit-mini-remove:hover {
-  background-color: rgba(255, 107, 107, 0.1);
-}
-
-.edit-mini-buttons {
-  display: flex;
-  gap: 15px;
-  justify-content: flex-end;
-}
-
-.btn {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.btn-primary {
-  background-color: #4CAF50;
-  color: white;
-}
-
-.btn-primary:hover {
-  background-color: #43a047;
-}
-
-.btn-secondary {
-  background-color: #f8f9fa;
-  color: #666;
-  border: 1px solid #ddd;
-}
-
-.btn-secondary:hover {
-  background-color: #e9ecef;
-}
-
-@media (max-width: 768px) {
-  .my-mini-grid {
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 15px;
-  }
-  
-  .modal-content {
-    max-width: 95%;
-  }
+.sortable-ghost {
+  opacity: 0.5;
+  background-color: #e0e7ff;
 }
 </style>

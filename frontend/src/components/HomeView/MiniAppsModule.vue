@@ -1,88 +1,107 @@
 <!-- MiniAppsModule.vue -->
 <template>
-  <div class="module-card">
-    <div class="module-header">
-      <div class="module-icon" style="background-color: #4CAF50;">
-        <i class="fas fa-th-large"></i>
+  <el-card class="module-card" shadow="hover">
+    <template #header>
+      <div class="module-header">
+        <div class="header-left">
+          <el-icon class="module-icon" :size="24" color="#fff" style="background-color: #4CAF50; padding: 8px; border-radius: 8px;">
+            <Menu />
+          </el-icon>
+          <h2>校园小程序平台</h2>
+        </div>
+        <router-link to="/miniapps" class="module-more">
+          查看全部 <el-icon><ArrowRight /></el-icon>
+        </router-link>
       </div>
-      <h2>校园小程序平台</h2>
-      <router-link to="/miniapps" class="module-more">
-        查看全部 <i class="fas fa-arrow-right"></i>
-      </router-link>
-    </div>
-    <div class="module-description">
-      <p>集成多个校园服务小程序，统一入口，便捷访问</p>
-    </div>
+      <p class="module-description">集成多个校园服务小程序，统一入口，便捷访问</p>
+    </template>
     
     <!-- 搜索和筛选 -->
     <div class="module-controls" v-if="showControls">
-      <div class="search-box">
-        <input 
-          type="text" 
-          v-model="searchKeyword" 
-          placeholder="搜索小程序..."
-          @input="handleSearch"
-        />
-        <i class="fas fa-search"></i>
-      </div>
-      <div class="filter-categories">
-        <button 
-          v-for="category in categories" 
-          :key="category.value"
-          :class="{ active: activeCategory === category.value }"
-          @click="filterByCategory(category.value)"
-        >
-          {{ category.label }}
-        </button>
-        <button 
-          :class="{ active: activeCategory === 'all' }"
-          @click="filterByCategory('all')"
-        >
-          全部
-        </button>
-      </div>
+      <el-row :gutter="20">
+        <el-col :span="12" :xs="24">
+          <el-input
+            v-model="searchKeyword"
+            placeholder="搜索小程序..."
+            prefix-icon="Search"
+            clearable
+            @input="handleSearch"
+            class="search-box"
+          />
+        </el-col>
+        <el-col :span="12" :xs="24">
+          <el-radio-group v-model="activeCategory" @change="filterByCategory">
+            <el-radio-button label="all">全部</el-radio-button>
+            <el-radio-button v-for="category in categories" :key="category.value" :label="category.value">
+              {{ category.label }}
+            </el-radio-button>
+          </el-radio-group>
+        </el-col>
+      </el-row>
     </div>
     
     <!-- 小程序网格 -->
-    <div class="mini-programs-grid">
-      <div 
-        v-for="program in filteredPrograms" 
-        :key="program.program_id" 
-        class="mini-program-card"
-        @click="openMiniProgram(program)"
-      >
-        <div class="program-icon" :style="{ backgroundColor: getCategoryColor(program.category) }">
-          <i :class="getProgramIcon(program.name)"></i>
-        </div>
-        <div class="program-name">{{ program.name }}</div>
-        <div class="program-category">{{ program.category }}</div>
-        <div class="program-description">{{ program.description }}</div>
-      </div>
-      
-      <!-- 加载状态 -->
-      <div v-if="loading" class="loading-state">
-        <div class="skeleton-card" v-for="n in 6" :key="n"></div>
-      </div>
+    <div v-loading="loading">
+      <el-row :gutter="20" v-if="filteredPrograms.length > 0">
+        <el-col 
+          v-for="program in filteredPrograms" 
+          :key="program.program_id" 
+          :xs="24" :sm="12" :md="12" :lg="8" :xl="8"
+          class="program-col"
+        >
+          <div 
+            class="mini-program-card" 
+            @click="openMiniProgram(program)"
+          >
+            <div class="card-bg-decoration"></div>
+            <div class="mini-content">
+              <div class="mini-header">
+                <div class="program-icon-wrapper" :class="getCategoryClass(program.category)">
+                  <el-icon :size="28" color="#fff">
+                    <component :is="getProgramIcon(program.name)" />
+                  </el-icon>
+                </div>
+              </div>
+              
+              <div class="mini-body">
+                <div class="program-name">{{ program.name }}</div>
+                <div class="mini-tags">
+                  <span class="program-category" :class="getCategoryClass(program.category)">{{ program.category }}</span>
+                </div>
+                <div class="program-description">{{ program.description }}</div>
+              </div>
+              
+              <div class="mini-footer">
+                <span class="enter-text">进入</span>
+                <el-icon class="enter-icon"><ArrowRight /></el-icon>
+              </div>
+            </div>
+          </div>
+        </el-col>
+      </el-row>
       
       <!-- 空状态 -->
-      <div v-if="!loading && filteredPrograms.length === 0" class="empty-state">
-        <i class="fas fa-inbox"></i>
-        <p>暂无小程序</p>
-      </div>  
+      <el-empty v-else description="暂无小程序" />
     </div>
 
     <ModalShow v-model="currentProgram" />
 
-  </div>
+  </el-card>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
-import { showToast } from '../../api/Toast'
+import { ElMessage } from 'element-plus'
 import { getMiniProgram } from '../../api/interface'
 import ModalShow from '../common/ModalShow.vue'
+import { 
+  Menu, ArrowRight, Search, 
+  CreditCard, Reading, Calendar, 
+  Lightning, TrendCharts, House 
+} from '@element-plus/icons-vue'
+
 const currentProgram = ref(null)
 
 const router = useRouter()
@@ -111,7 +130,9 @@ const error = ref(null)
 const categories = ref([
   { label: '教务', value: '教务' },
   { label: '生活', value: '生活' },
-  { label: '工具', value: '工具' }
+  { label: '工具', value: '工具' },
+  { label: '健康', value: '健康' },
+  { label: '娱乐', value: '娱乐' }
 ])
 
 // 计算属性
@@ -176,35 +197,41 @@ const handleSearch = () => {
 }
 
 const filterByCategory = (category) => {
-  activeCategory.value = category
+  activeCategory.value = category === 'all' ? 'all' : category
   loadMiniPrograms()
 }
 
-const getCategoryColor = (category) => {
-  const colors = {
-    '教务': '#3498db',
-    '生活': '#2ecc71',
-    '工具': '#9b59b6',
-    '其他': '#95a5a6'
+const getCategoryClass = (category) => {
+  const map = {
+    '教务': 'cat-edu',
+    '生活': 'cat-life',
+    '工具': 'cat-tool',
+    '健康': 'cat-health',
+    '娱乐': 'cat-ent'
   }
-  return colors[category] || colors['其他']
+  return map[category] || 'cat-other'
 }
 
 const getProgramIcon = (name) => {
+  if (name.includes('课表')) return Calendar
+  if (name.includes('成绩')) return TrendCharts
+  if (name.includes('图书')) return Reading
+  if (name.includes('一卡通')) return CreditCard
+  if (name.includes('失物')) return Search
+  if (name.includes('教室')) return House
+  
   const icons = {
-    '校园一卡通': 'fas fa-credit-card',
-    '图书馆查询': 'fas fa-book',
-    '课表查询': 'fas fa-calendar-alt',
-    '电费缴纳': 'fas fa-bolt',
-    '成绩查询': 'fas fa-chart-line',
-    '失物招领': 'fas fa-search',
-    '校园网充值': 'fas fa-wifi',
-    '教室预约': 'fas fa-door-closed'
+    '校园一卡通': CreditCard,
+    '图书馆查询': Reading,
+    '课表查询': Calendar,
+    '电费缴纳': Lightning,
+    '成绩查询': TrendCharts,
+    '失物招领': Search,
+    '校园网充值': CreditCard,
+    '教室预约': House
   }
-  return icons[name] || 'fas fa-th-large'
+  return icons[name] || Menu
 }
-
-const selectedProgram = ref(null)
 
 const setSelectedProgram = (program) => {
   currentProgram.value = program
@@ -214,7 +241,7 @@ const openMiniProgram = (program) => {
   
   if (!authStore.isAuthenticated) {
     // 触发登录弹窗
-    showToast('请登录！', 'error')
+    ElMessage.error('请登录！')
     return
   }
   
@@ -230,409 +257,240 @@ let searchTimer = null
 
 <style scoped>
 .module-card {
-  background-color: white;
-  border-radius: 15px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-  padding: 25px;
-  transition: transform 0.3s, box-shadow 0.3s;
-}
-
-.module-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  border-radius: 12px;
 }
 
 .module-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
-.module-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 15px;
-  color: white;
-  font-size: 1.5rem;
-}
-
-.module-header h2 {
-  font-size: 1.5rem;
-  flex-grow: 1;
-  color: #2c3e50;
-}
-
-.module-more {
-  color: #3498db;
-  text-decoration: none;
-  font-weight: 500;
-  font-size: 0.9rem;
-}
-
-.module-more i {
-  margin-left: 5px;
-  transition: transform 0.3s;
-}
-
-.module-more:hover i {
-  transform: translateX(5px);
-}
-
-.module-description {
-  margin-bottom: 20px;
-  color: #666;
-}
-
-/* 搜索和筛选区域 */
-.module-controls {
-  margin-bottom: 20px;
-}
-
-.search-box {
-  position: relative;
-  margin-bottom: 15px;
-}
-
-.search-box input {
-  width: 100%;
-  padding: 10px 15px 10px 40px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  transition: border-color 0.3s;
-}
-
-.search-box input:focus {
-  outline: none;
-  border-color: #3498db;
-}
-
-.search-box i {
-  position: absolute;
-  left: 15px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #888;
-}
-
-.filter-categories {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.filter-categories button {
-  padding: 6px 12px;
-  border: 1px solid #ddd;
-  border-radius: 20px;
-  background-color: white;
-  color: #666;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.filter-categories button:hover {
-  border-color: #3498db;
-  color: #3498db;
-}
-
-.filter-categories button.active {
-  background-color: #3498db;
-  border-color: #3498db;
-  color: white;
-}
-
-/* 小程序网格 */
-.mini-programs-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 15px;
-}
-
-.mini-program-card {
-  background-color: #f8f9fa;
-  border-radius: 10px;
-  padding: 15px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s;
-  border: 1px solid #eee;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.mini-program-card:hover {
-  background-color: #eef5ff;
-  transform: translateY(-3px);
-  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.05);
-}
-
-.program-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 10px;
-  color: white;
-  font-size: 1.3rem;
-}
-
-.program-name {
-  font-weight: 600;
-  font-size: 0.9rem;
-  margin-bottom: 5px;
-  color: #333;
-}
-
-.program-category {
-  font-size: 0.75rem;
-  color: #888;
-  background-color: #f0f0f0;
-  padding: 2px 8px;
-  border-radius: 10px;
-  display: inline-block;
-  margin-bottom: 8px;
-}
-
-.program-description {
-  font-size: 0.8rem;
-  color: #666;
-  line-height: 1.4;
-  margin-top: 5px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* 加载状态 */
-.loading-state {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 15px;
-}
-
-.skeleton-card {
-  background-color: #e0e0e0;
-  border-radius: 10px;
-  height: 180px;
-  animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.5; }
-  100% { opacity: 1; }
-}
-
-/* 空状态 */
-.empty-state {
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: 40px 20px;
-}
-
-.empty-state i {
-  font-size: 3rem;
-  color: #ddd;
-  margin-bottom: 15px;
-}
-
-.empty-state p {
-  color: #888;
-  font-size: 0.9rem;
-}
-
-/* 详情弹窗 */
-.program-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 2000;
-}
-
-.program-modal-content {
-  background-color: white;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 500px;
-  overflow: hidden;
-  animation: slideIn 0.3s ease;
-}
-
-@keyframes slideIn {
-  from {
-    transform: translateY(-20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.modal-header {
-  padding: 20px 25px;
-  border-bottom: 1px solid #eee;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.modal-header h3 {
-  font-size: 1.3rem;
-  color: #2c3e50;
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.module-header h2 {
+  font-size: 1.25rem;
   margin: 0;
+  color: #303133;
 }
 
-.modal-close {
-  background: none;
-  border: none;
-  font-size: 1.8rem;
-  cursor: pointer;
-  color: #888;
-  line-height: 1;
-  padding: 0;
-  width: 30px;
-  height: 30px;
+.module-more {
   display: flex;
   align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-}
-
-.modal-close:hover {
-  background-color: #f5f5f5;
-}
-
-.modal-body {
-  padding: 25px;
-}
-
-.program-detail {
-  display: flex;
-  align-items: flex-start;
-  gap: 20px;
-  margin-bottom: 25px;
-}
-
-.program-icon-large {
-  width: 80px;
-  height: 80px;
-  border-radius: 15px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 2rem;
-  flex-shrink: 0;
-}
-
-.program-info {
-  flex: 1;
-}
-
-.info-row {
-  margin-bottom: 10px;
-  display: flex;
-}
-
-.info-row .label {
-  font-weight: 500;
-  color: #666;
-  min-width: 60px;
-}
-
-.info-row .value {
-  color: #333;
-  flex: 1;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 15px;
-}
-
-.btn {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
+  gap: 4px;
+  color: #409EFF;
+  text-decoration: none;
   font-size: 0.9rem;
-  font-weight: 500;
+}
+
+.module-description {
+  margin: 10px 0 0;
+  color: #909399;
+  font-size: 0.9rem;
+}
+
+.module-controls {
+  margin-bottom: 20px;
+}
+
+.module-controls :deep(.el-radio-group) {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 5px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.module-controls :deep(.el-radio-group)::-webkit-scrollbar {
+  height: 4px;
+}
+
+.module-controls :deep(.el-radio-group)::-webkit-scrollbar-thumb {
+  background: #dcdfe6;
+  border-radius: 2px;
+}
+
+.search-box {
+  margin-bottom: 10px;
+}
+
+.program-col {
+  margin-bottom: 24px;
+}
+
+/* 卡片全新设计 */
+.mini-program-card {
+  position: relative;
+  height: 100%;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   cursor: pointer;
-  transition: all 0.3s;
-  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+}
+
+.mini-program-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.08);
+  border-color: rgba(118, 75, 162, 0.1);
+}
+
+.card-bg-decoration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 60px;
+  background: linear-gradient(180deg, rgba(245, 247, 250, 0.8) 0%, rgba(255, 255, 255, 0) 100%);
+  z-index: 0;
+}
+
+.mini-content {
+  position: relative;
+  z-index: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.mini-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.program-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease;
+  margin-bottom: 0;
+  line-height: 1;
 }
 
-.btn-primary {
-  background-color: #3498db;
-  color: white;
+.program-icon-wrapper .el-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
 }
 
-.btn-primary:hover {
-  background-color: #2980b9;
+.mini-program-card:hover .program-icon-wrapper {
+  transform: scale(1.1);
 }
 
-.btn-secondary {
-  background-color: #f8f9fa;
-  color: #666;
-  border: 1px solid #ddd;
+/* 颜色分类系统 */
+.cat-edu { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); box-shadow: 0 6px 15px rgba(79, 172, 254, 0.25); }
+.cat-life { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); box-shadow: 0 6px 15px rgba(67, 233, 123, 0.25); }
+.cat-tool { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); box-shadow: 0 6px 15px rgba(118, 75, 162, 0.25); }
+.cat-health { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%); box-shadow: 0 6px 15px rgba(255, 154, 158, 0.25); }
+.cat-ent { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); box-shadow: 0 6px 15px rgba(252, 182, 159, 0.25); }
+.cat-other { background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); box-shadow: 0 6px 15px rgba(161, 140, 209, 0.25); }
+
+/* 文字颜色的辅助类，用于标签文字 */
+.program-category.cat-edu { color: #0093E9; background: rgba(0, 147, 233, 0.1); box-shadow: none; }
+.program-category.cat-life { color: #28C76F; background: rgba(40, 199, 111, 0.1); box-shadow: none; }
+.program-category.cat-tool { color: #7367F0; background: rgba(115, 103, 240, 0.1); box-shadow: none; }
+.program-category.cat-health { color: #FF9F43; background: rgba(255, 159, 67, 0.1); box-shadow: none; }
+.program-category.cat-ent { color: #EA5455; background: rgba(234, 84, 85, 0.1); box-shadow: none; }
+.program-category.cat-other { color: #A8A8A8; background: rgba(168, 168, 168, 0.1); box-shadow: none; }
+
+.mini-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
-.btn-secondary:hover {
-  background-color: #e9ecef;
+.program-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #2c3e50;
+  margin-bottom: 6px;
 }
 
-/* 响应式设计 */
+.mini-tags {
+  margin-bottom: 10px;
+}
+
+.program-category {
+  font-size: 0.75rem;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+  display: inline-block;
+  transform: none; /* reset original transform */
+  margin-bottom: 0;
+}
+
+.program-description {
+  font-size: 0.85rem;
+  color: #8c9bab;
+  line-height: 1.5;
+  height: 2.8em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.mini-footer {
+  margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  color: #a0a0a0;
+  font-size: 0.85rem;
+  transition: all 0.3s;
+}
+
+.enter-text {
+  opacity: 0;
+  transform: translateX(10px);
+  transition: all 0.3s;
+  margin-right: 4px;
+  font-weight: 500;
+}
+
+.enter-icon {
+  transition: all 0.3s;
+}
+
+.mini-program-card:hover .mini-footer {
+  color: #764ba2;
+}
+
+.mini-program-card:hover .enter-text {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.mini-program-card:hover .enter-icon {
+  transform: translateX(4px);
+}
+
 @media (max-width: 768px) {
-  .mini-programs-grid {
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  }
-  
-  .program-detail {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-  
-  .info-row {
-    flex-direction: column;
-    text-align: center;
-  }
-  
-  .modal-actions {
-    flex-direction: column;
-  }
-  
-  .modal-actions .btn {
-    width: 100%;
-  }
-}
-
-@media (max-width: 576px) {
-  .module-card {
-    padding: 20px;
-  }
-  
   .module-header {
     flex-direction: column;
     align-items: flex-start;

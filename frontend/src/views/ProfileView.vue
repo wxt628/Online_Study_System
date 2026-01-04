@@ -1,92 +1,83 @@
 <template>
   <div class="profile-view">
     <div class="container">
-      <h1>个人信息</h1>
-      <div v-if="loading" class="loading">加载中...</div>
-      <div v-else-if="error" class="error">{{ error }}</div>
-      <div v-else-if="userInfo" class="profile-card">
-        <div class="profile-header">
-          <img :src="avatarSrc" alt="用户头像" class="avatar">
-          <h2 v-if="!editMode">{{ userInfo.name }}</h2>
+      <el-card class="profile-card" v-loading="loading">
+        <template #header>
+          <div class="card-header">
+            <h3>个人信息</h3>
+            <el-button v-if="!editMode && userInfo" type="primary" text @click="startEdit">
+              <el-icon class="mr-1"><Edit /></el-icon> 编辑
+            </el-button>
+          </div>
+        </template>
+        
+        <div v-if="error" class="mb-4">
+          <el-alert :title="error" type="error" show-icon :closable="false" />
         </div>
-        <div class="profile-details">
-          <template v-if="editMode">
-            <div class="edit-form">
-              <div class="detail-item">
-                <label>姓名:</label>
-                <input v-model="form.name" type="text" readonly>
-              </div>
-              <div class="detail-item">
-                <label>邮箱:</label>
-                <input v-model="form.email" type="email">
-              </div>
-              <div class="detail-item">
-                <label>电话:</label>
-                <input v-model="form.phone" type="text">
-              </div>
-              <!-- 头像由文件上传支持，移除手动 avatar_url 输入 -->
-              <div class="detail-item">
-                <label>上传头像:</label>
-                <input ref="fileInput" type="file" accept="image/*" @change="onFileChange">
-                <button v-if="avatarPreview || avatarFile" class="btn" type="button" @click="clearFile" style="margin-left:10px">清除</button>
-              </div>
-              <div v-if="avatarPreview" class="detail-item">
-                <label>预览:</label>
-                <img :src="avatarPreview" alt="avatar preview" style="width:80px; height:80px; border-radius:8px; object-fit:cover">
-              </div>
-              <div class="detail-item">
-                <label>旧密码:</label>
-                <input v-model="form.old_password" type="password" placeholder="无需修改请留空">
-              </div>
-              <div class="detail-item">
-                <label>新密码:</label>
-                <input v-model="form.new_password" type="password" placeholder="无需修改请留空">
-              </div>
-            </div>
-          </template>
+        
+        <div v-else-if="userInfo" class="profile-content">
+          <div class="avatar-section">
+             <el-avatar :size="100" :src="avatarPreview || avatarSrc" class="mb-2" />
+             <div v-if="editMode" class="avatar-actions">
+               <el-upload
+                 class="avatar-uploader"
+                 action="#"
+                 :show-file-list="false"
+                 :auto-upload="false"
+                 :on-change="onFileChange"
+                 accept="image/*"
+               >
+                 <el-button size="small" type="primary">更换头像</el-button>
+               </el-upload>
+               <el-button v-if="avatarPreview || avatarFile" size="small" text @click="clearFile" class="ml-2">清除</el-button>
+             </div>
+             <h2 v-if="!editMode" class="user-name">{{ userInfo.name }}</h2>
+          </div>
 
-          <template v-else>
-            <div class="detail-item">
-              <label>学号:</label>
-              <span>{{ userInfo.student_id }}</span>
+          <el-descriptions v-if="!editMode" :column="1" border class="profile-descriptions">
+            <el-descriptions-item label="学号">{{ userInfo.student_id }}</el-descriptions-item>
+            <el-descriptions-item label="邮箱">{{ userInfo.email }}</el-descriptions-item>
+            <el-descriptions-item label="电话">{{ userInfo.phone }}</el-descriptions-item>
+            <el-descriptions-item label="注册时间">{{ formatDate(userInfo.created_at) }}</el-descriptions-item>
+            <el-descriptions-item label="上次更新">{{ formatDate(userInfo.updated_at) }}</el-descriptions-item>
+          </el-descriptions>
+
+          <el-form v-else :model="form" label-width="80px" class="edit-form">
+            <el-form-item label="姓名">
+              <el-input v-model="form.name" disabled />
+            </el-form-item>
+            <el-form-item label="邮箱">
+              <el-input v-model="form.email" />
+            </el-form-item>
+             <el-form-item label="电话">
+              <el-input v-model="form.phone" />
+            </el-form-item>
+            <el-divider content-position="center">修改密码</el-divider>
+            <el-form-item label="旧密码">
+              <el-input v-model="form.old_password" type="password" placeholder="无需修改请留空" show-password />
+            </el-form-item>
+            <el-form-item label="新密码">
+              <el-input v-model="form.new_password" type="password" placeholder="无需修改请留空" show-password />
+            </el-form-item>
+            
+            <div class="form-actions">
+              <el-button @click="cancelEdit">取消</el-button>
+              <el-button type="primary" @click="saveProfile" :loading="saving">保存</el-button>
             </div>
-            <div class="detail-item">
-              <label>邮箱:</label>
-              <span>{{ userInfo.email }}</span>
-            </div>
-            <div class="detail-item">
-              <label>电话:</label>
-              <span>{{ userInfo.phone }}</span>
-            </div>
-						<div class="detail-item">
-							<label>注册时间:</label>
-							<span>{{ formatDate(userInfo.created_at) }}</span>
-						</div>
-						<div class="detail-item">
-							<label>上次更新:</label>
-							<span>{{ formatDate(userInfo.updated_at) }}</span>
-						</div>
-          </template>
+          </el-form>
         </div>
-				<div v-if="editMode" class="edit-actions">
-					<button class="btn btn-primary" @click="saveProfile" :disabled="saving">保存</button>
-					<button class="btn" @click="cancelEdit" :disabled="saving">取消</button>
-				</div>
-				<div class="detail-item" style="justify-content: flex-end;">
-					<button v-if="!editMode" class="btn" @click="startEdit">编辑个人信息</button>
-				</div>
-      </div>
+      </el-card>
     </div>
   </div>
 </template>
 
 <script setup>
-import axios from 'axios'
 import { ref, onMounted, computed } from 'vue'
-import { getCurrentUser, updateUserProfile } from '../api/interface'
+import { getCurrentUser } from '../api/interface'
 import api from '../api/config'
 import { useAuthStore } from '../stores/auth'
-import { showToast } from '../api/Toast'
+import { ElMessage } from 'element-plus'
+import { Edit } from '@element-plus/icons-vue'
 
 const authStore = useAuthStore()
 
@@ -98,7 +89,6 @@ const saving = ref(false)
 const form = ref({ name: '', email: '', phone: '', old_password: '', new_password: '' })
 const avatarFile = ref(null)
 const avatarPreview = ref('')
-const fileInput = ref(null)
 
 const fetchUserInfo = async () => {
   try {
@@ -126,6 +116,7 @@ const fetchUserInfo = async () => {
 }
 
 const formatDate = (dateString) => {
+  if (!dateString) return '-'
   return new Date(dateString).toLocaleString('zh-CN')
 }
 
@@ -168,7 +159,7 @@ const saveProfile = async () => {
       fd.append('new_password', form.value.new_password)
     }
 
-		const resp = await api.post('/user/update', fd)
+    const resp = await api.post('/user/update', fd)
 
     const updated = resp.data?.data || resp.data
     if (resp.data?.code && resp.data.code !== 200) {
@@ -185,11 +176,11 @@ const saveProfile = async () => {
     form.value.old_password = ''
     form.value.new_password = ''
     editMode.value = false
-    showToast('个人信息已更新', 'success')
+    ElMessage.success('个人信息已更新')
   } catch (err) {
     console.error('更新用户信息失败', err)
-    error.value = err.response?.data?.message || '更新用户信息失败'
-    showToast(error.value, 'error')
+    // Don't set global error, just show toast
+    ElMessage.error(err.response?.data?.message || '更新用户信息失败')
   } finally {
     saving.value = false
   }
@@ -201,20 +192,16 @@ const clearFile = () => {
     URL.revokeObjectURL(avatarPreview.value)
     avatarPreview.value = ''
   }
-  if (fileInput.value) fileInput.value.value = ''
 }
 
-const onFileChange = (e) => {
-  const files = e.target.files
-  const f = files && files[0]
-  if (!f) {
-    // user cleared selection or cancelled
-    clearFile()
-    return
-  }
-  avatarFile.value = f
+const onFileChange = (file) => {
+  // Element Plus passes a File object wrapped in a proxy, or we can get it from raw
+  const rawFile = file.raw
+  if (!rawFile) return
+
+  avatarFile.value = rawFile
   if (avatarPreview.value) URL.revokeObjectURL(avatarPreview.value)
-  avatarPreview.value = URL.createObjectURL(f)
+  avatarPreview.value = URL.createObjectURL(rawFile)
 }
 
 const avatarSrc = computed(() => {
@@ -232,9 +219,9 @@ const avatarSrc = computed(() => {
 
 <style scoped>
 .profile-view {
-  padding: 20px 0;
+  padding: 40px 0;
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background-color: #f5f7fa;
 }
 
 .container {
@@ -243,106 +230,68 @@ const avatarSrc = computed(() => {
   padding: 0 20px;
 }
 
-h1 {
-  text-align: center;
-  margin-bottom: 30px;
-  color: #333;
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.loading, .error {
-  text-align: center;
-  padding: 50px;
-  font-size: 18px;
-}
-
-.error {
-  color: #e74c3c;
-}
-
-.profile-card {
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-  padding: 30px;
-}
-
-.profile-header {
-  text-align: center;
-  margin-bottom: 30px;
-}
-
-.avatar {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  margin-bottom: 15px;
-}
-
-.profile-header h2 {
+.card-header h3 {
   margin: 0;
-  color: #333;
+  color: #303133;
 }
 
-.profile-details {
-  display: grid;
-  gap: 20px;
+.profile-content {
+  padding: 10px;
 }
 
-.detail-item {
+.avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.user-name {
+  margin-top: 15px;
+  color: #303133;
+}
+
+.avatar-actions {
   display: flex;
   align-items: center;
-  padding: 15px 0;
-  border-bottom: 1px solid #eee;
+  margin-top: 10px;
 }
 
-.detail-item:last-child {
-  border-bottom: none;
+.ml-2 {
+  margin-left: 8px;
 }
 
-.detail-item label {
-  font-weight: bold;
-  min-width: 100px;
-  color: #555;
+.mb-2 {
+  margin-bottom: 8px;
 }
 
-.detail-item span {
-  color: #333;
+.mb-4 {
+  margin-bottom: 16px;
 }
 
-/* Edit form and button styles */
-.edit-form input {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 0.95rem;
+.mr-1 {
+  margin-right: 4px;
 }
 
-.edit-actions {
+.mt-2 {
+  margin-top: 8px;
+}
+
+.edit-form {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.form-actions {
   display: flex;
-  gap: 10px;
   justify-content: center;
-  align-items: center;
-}
-
-.btn {
-  display: inline-block;
-  padding: 8px 14px;
-  border-radius: 8px;
-  border: 1px solid transparent;
-  cursor: pointer;
-  background: #f0f2f5;
-  color: #333;
-}
-
-.btn[disabled] {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.btn-primary {
-  background: #3498db;
-  color: white;
-  border-color: #2980b9;
+  gap: 15px;
+  margin-top: 30px;
 }
 </style>

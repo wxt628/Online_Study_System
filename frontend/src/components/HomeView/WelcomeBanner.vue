@@ -3,6 +3,7 @@ import { computed, ref, onMounted } from 'vue'
 import api from '../../api/config'
 import { getMiniProgram, getCourses, getCourseAssignments, getAssignmentSubmissions } from '../../api/interface'
 import { useAuthStore } from '../../stores/auth'
+import { Menu, List, ChatDotRound, Reading } from '@element-plus/icons-vue'
 
 const authStore = useAuthStore()
 const user = computed(() => authStore.user)
@@ -10,7 +11,7 @@ const user = computed(() => authStore.user)
 const props = defineProps({
   stats: {
     type: Object,
-    required: true,
+    required: false,
     default: () => ({
       miniPrograms: 8,
       assignments: 0,
@@ -117,74 +118,77 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="welcome-banner">
-    <div class="welcome-content">
-      <h1>{{ welcomeText }}</h1>
-      <p>{{ welcomeDescription }}</p>
+  <el-card class="welcome-card" shadow="hover">
+    <div class="welcome-container">
+      <div class="welcome-content">
+        <h1 class="welcome-title">{{ welcomeText }}</h1>
+        <p class="welcome-desc">{{ welcomeDescription }}</p>
+        
+        <el-row :gutter="40" class="welcome-stats">
+          <el-col :span="8">
+            <el-statistic :value="stats.miniPrograms" title="小程序">
+              <template #suffix>
+                <el-icon><Menu /></el-icon>
+              </template>
+            </el-statistic>
+          </el-col>
+          <el-col :span="8">
+            <el-statistic :value="stats.assignments" title="待办作业" value-style="color: #E6A23C">
+              <template #suffix>
+                <el-icon><List /></el-icon>
+              </template>
+            </el-statistic>
+          </el-col>
+          <el-col :span="8">
+            <el-statistic :value="stats.posts" title="社区动态">
+              <template #suffix>
+                <el-icon><ChatDotRound /></el-icon>
+              </template>
+            </el-statistic>
+          </el-col>
+        </el-row>
+      </div>
       
-      <div class="welcome-stats">
-        <div class="stat-item">
-          <span class="stat-value">{{ stats.miniPrograms }}</span>
-          <span class="stat-label">小程序</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-value">{{ stats.assignments }}</span>
-          <span class="stat-label">待办作业</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-value">{{ stats.posts }}</span>
-          <span class="stat-label">社区动态</span>
-        </div>
+      <div class="welcome-image">
+        <!-- 图片待添加 -->
+        <el-icon :size="120" color="#409EFF"><img v-if="false" src="" /><Reading /></el-icon>
       </div>
     </div>
-    
-    <div class="welcome-image">
-      <img src="../../assets/welcome-illustration.svg" alt="Welcome" />
-    </div>
-  </div>
+  </el-card>
 </template>
 
 <style scoped>
-.welcome-banner {
-  color: rgb(0, 0, 0);
-  border-radius: 15px;
-  padding: 30px;
-  margin: 30px 0;
+.welcome-card {
+  margin: 20px 0;
+  border-radius: 12px;
+}
+
+.welcome-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
 }
 
-.welcome-content h1 {
-  font-size: 2.2rem;
-  margin-bottom: 10px;
+.welcome-content {
+  flex: 1;
+  min-width: 300px;
 }
 
-.welcome-content p {
+.welcome-title {
+  font-size: 2.2rem;
+  margin-bottom: 10px;
+  color: #303133;
+}
+
+.welcome-desc {
   font-size: 1.1rem;
-  opacity: 0.9;
+  color: #606266;
+  margin-bottom: 24px;
 }
 
 .welcome-stats {
-  display: flex;
-  gap: 30px;
-  margin-top: 15px;
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-}
-
-.stat-value {
-  font-size: 1.8rem;
-  font-weight: bold;
-}
-
-.stat-label {
-  font-size: 0.9rem;
-  opacity: 0.9;
+  max-width: 600px;
 }
 
 .welcome-image img {
@@ -193,13 +197,13 @@ onMounted(async () => {
 }
 
 @media (max-width: 768px) {
-  .welcome-banner {
+  .welcome-container {
     flex-direction: column;
     text-align: center;
   }
   
   .welcome-stats {
-    justify-content: center;
+    margin: 20px auto;
   }
   
   .welcome-image {
