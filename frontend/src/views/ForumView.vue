@@ -117,7 +117,7 @@
                      :icon="selectedPost.is_liked ? 'StarFilled' : 'Star'"
                      circle
                      size="large"
-                     @click="toggleLike(selectedPost.post_id)"
+                     @click="toggleLike(selectedPost)"
                   />
                   <span class="like-count-large">{{ selectedPost.like_count || 0 }}</span>
                </div>
@@ -251,7 +251,7 @@
                               <span class="stat-item">
                                  <el-icon><ChatDotRound /></el-icon> {{ post.comment_count || 0 }}
                               </span>
-                              <span class="stat-item like-item" @click.stop="toggleLike(post.post_id)">
+                              <span class="stat-item like-item" @click.stop="toggleLike(post)">
                                  <el-icon :color="post.is_liked ? '#F56C6C' : ''"><component :is="post.is_liked ? 'StarFilled' : 'Star'" /></el-icon> {{ post.like_count || 0 }}
                               </span>
                            </div>
@@ -563,8 +563,16 @@ const createReply = async (parentId) => {
   }
 }
 
-const toggleLike = async (postId) => {
+const toggleLike = async (post) => {
   try {
+    const postId = post.post_id;
+    // 乐观更新：立即切换状态
+    const originalIsLiked = post.is_liked;
+    const originalLikeCount = post.like_count;
+
+    post.is_liked = !post.is_liked;
+    post.like_count = post.is_liked ? (post.like_count + 1) : (post.like_count - 1);
+
     const { data } = await api.post(`/posts/${postId}/like`)
     
     if (data.code === 200 && data.data) {
@@ -576,16 +584,21 @@ const toggleLike = async (postId) => {
         selectedPost.value.like_count = likeData.like_count
       }
       
-      // 更新帖子列表中的点赞状态
-      const post = posts.value.find(p => p.post_id === postId)
-      if (post) {
-        post.is_liked = likeData.is_liked
-        post.like_count = likeData.like_count
-      }
+      // 更新帖子列表中的点赞状态（确保数据一致）
+      post.is_liked = likeData.is_liked
+      post.like_count = likeData.like_count
+    } else {
+      // 失败回滚
+      post.is_liked = originalIsLiked;
+      post.like_count = originalLikeCount;
+      ElMessage.error('操作失败');
     }
   } catch (error) {
     console.error('Failed to toggle like:', error)
-    console.log('操作失败，请重试')
+    // 失败回滚
+    post.is_liked = !post.is_liked;
+    post.like_count = post.is_liked ? (post.like_count + 1) : (post.like_count - 1);
+    ElMessage.error('操作失败，请重试')
   }
 }
 

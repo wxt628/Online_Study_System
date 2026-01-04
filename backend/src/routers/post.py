@@ -12,7 +12,7 @@ router = APIRouter()
 @router.post("/posts/search")
 def search_posts(
     payload: dict = Body(None),
-    _: database.User = Depends(get_current_user),
+    current_user: database.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     category = (payload or {}).get('category')
@@ -40,6 +40,16 @@ def search_posts(
 
     items = q.offset((page-1)*pageSize).limit(pageSize).all()
 
+    # 获取当前用户点赞过的帖子ID集合
+    liked_post_ids = set()
+    if items:
+        post_ids = [p.post_id for p in items]
+        likes = db.query(database.PostLike.post_id).filter(
+            database.PostLike.user_id == current_user.user_id,
+            database.PostLike.post_id.in_(post_ids)
+        ).all()
+        liked_post_ids = {l.post_id for l in likes}
+
     result_items = []
     for p in items:
         comment_count = db.query(func.count(database.Comment.comment_id)).filter(database.Comment.post_id == p.post_id).scalar()
@@ -57,6 +67,7 @@ def search_posts(
             'like_count': p.like_count,
             'view_count': p.view_count,
             'comment_count': comment_count,
+            'is_liked': p.post_id in liked_post_ids,
             'created_at': p.created_at,
         })
 
@@ -69,7 +80,7 @@ def list_posts(
     order: str | None = Query("desc"),
     page: int = Query(1, ge=1),
     pageSize: int = Query(20, ge=1, le=200),
-    _: database.User = Depends(get_current_user),
+    current_user: database.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     q = db.query(database.Post).options(joinedload(database.Post.user))
@@ -91,6 +102,16 @@ def list_posts(
 
     items = q.offset((page-1)*pageSize).limit(pageSize).all()
 
+    # 获取当前用户点赞过的帖子ID集合
+    liked_post_ids = set()
+    if items:
+        post_ids = [p.post_id for p in items]
+        likes = db.query(database.PostLike.post_id).filter(
+            database.PostLike.user_id == current_user.user_id,
+            database.PostLike.post_id.in_(post_ids)
+        ).all()
+        liked_post_ids = {l.post_id for l in likes}
+
     result_items = []
     for p in items:
         comment_count = db.query(func.count(database.Comment.comment_id)).filter(database.Comment.post_id == p.post_id).scalar()
@@ -108,17 +129,24 @@ def list_posts(
             'like_count': p.like_count,
             'view_count': p.view_count,
             'comment_count': comment_count,
+            'is_liked': p.post_id in liked_post_ids,
             'created_at': p.created_at,
         })
 
     return { 'code': 200, 'message': '成功', 'data': { 'items': result_items, 'pagination': { 'total': total, 'page': page, 'pageSize': pageSize, 'totalPages': math.ceil(total / pageSize) } } }
 
 @router.get("/posts/{post_id}")
-def get_post(post_id: int, page: int = Query(1, ge=1), pageSize: int = Query(20, ge=1), _: database.User = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_post(post_id: int, page: int = Query(1, ge=1), pageSize: int = Query(20, ge=1), current_user: database.User = Depends(get_current_user), db: Session = Depends(get_db)):
     # 使用 joinedload 加载用户信息
     post = db.query(database.Post).options(joinedload(database.Post.user)).filter(database.Post.post_id == post_id).first()
     if not post:
         raise HTTPException(status_code=404, detail={"error": {"message": "帖子不存在"}})
+
+    # Check if liked
+    is_liked = db.query(database.PostLike).filter(
+        database.PostLike.post_id == post_id, 
+        database.PostLike.user_id == current_user.user_id
+    ).first() is not None
 
     # increment view count
     post.view_count = int(post.view_count) + 1
@@ -179,6 +207,7 @@ def get_post(post_id: int, page: int = Query(1, ge=1), pageSize: int = Query(20,
                 },
                 'category': post.category,
                 'like_count': post.like_count,
+                'is_liked': is_liked,
                 'view_count': post.view_count,
                 'created_at': post.created_at,
                 'updated_at': post.updated_at
@@ -196,13 +225,19 @@ def get_post(post_id: int, page: int = Query(1, ge=1), pageSize: int = Query(20,
     }
 
 @router.post("/posts/{post_id}/detail")
-def get_post_detail(post_id: int, payload: dict = Body(None), _: database.User = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_post_detail(post_id: int, payload: dict = Body(None), current_user: database.User = Depends(get_current_user), db: Session = Depends(get_db)):
     page = int((payload or {}).get('page') or 1)
     pageSize = int((payload or {}).get('pageSize') or 20)
 
     post = db.query(database.Post).options(joinedload(database.Post.user)).filter(database.Post.post_id == post_id).first()
     if not post:
         raise HTTPException(status_code=404, detail={"error": {"message": "帖子不存在"}})
+
+    # Check if liked
+    is_liked = db.query(database.PostLike).filter(
+        database.PostLike.post_id == post_id, 
+        database.PostLike.user_id == current_user.user_id
+    ).first() is not None
 
     post.view_count = int(post.view_count) + 1
     db.commit()
@@ -258,6 +293,7 @@ def get_post_detail(post_id: int, payload: dict = Body(None), _: database.User =
                 },
                 'category': post.category,
                 'like_count': post.like_count,
+                'is_liked': is_liked,
                 'view_count': post.view_count,
                 'created_at': post.created_at,
                 'updated_at': post.updated_at
